@@ -1,1 +1,1 @@
-# FreezeCurves.jl
+# FreezeCurves
