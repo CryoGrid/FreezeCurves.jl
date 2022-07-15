@@ -1,6 +1,9 @@
 using FreezeCurves
 using Test
+using Unitful
 
 @testset "FreezeCurves.jl" begin
-    # Write your tests here.
+    include("swrc_tests.jl")
+    include("sfcc_tests.jl")
+    include("solver_tests.jl")
 end
