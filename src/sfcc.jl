@@ -17,14 +17,14 @@ abstract type SFCCSolver end
 """
     SFCC{F,S} <: FreezeCurve
 
-Generic representation of the soil freezing characteristic curve. The shape and parameters
-of the curve are determined by the implementation of SFCCFunction `f`. For implicit functions,
-a non-linear `solver` must also be specified.
+Generic representation of the soil freezing characteristic curve along with a nonlinear `solver`
+for resolving the temperature-energy conservation law. The shape and parameters of the curve are
+determined by the implementation of SFCCFunction `f`.
 """
 struct SFCC{F,S} <: FreezeCurve
     f::F # freeze curve function f: (T,...) -> θ
     solver::S # solver for H -> T or T -> H
-    SFCC(f::F, s::S) where {F<:SFCCFunction,S<:Union{Nothing,SFCCSolver}} = new{F,S}(f,s)
+    SFCC(f::F, s::S=SFCCPreSolver()) where {F<:SFCCFunction,S<:SFCCSolver} = new{F,S}(f,s)
 end
 """
     SFCCTable{F,I} <: SFCCFunction
@@ -60,15 +60,21 @@ Base.@kwdef struct SoilFreezingProperties{TTₘ,TLsl,Tρw,Tθres,Tθtot,Tθsat}
     end
 end
 """
+    SoilFreezingProperties(f::SFCCFunction)
+
+Retrieves the default `SoilFreezingProperties` from `f`; should be defined for all freeze curves.
+"""
+SoilFreezingProperties(f::SFCCFunction) = f.prop
+"""
     temperature_residual(f::F, f_args::Fargs, f_hc, L, H, T) where {F,Fargs}
     
 Helper function for updating θw, C, and the residual.
 """
-@inline function temperature_residual(f::F, f_args::Fargs, f_hc, L, H, T) where {F,Fargs}
+@inline function temperature_residual(f::F, f_args::Fargs, f_hc, L, H, T, residual_only=false) where {F,Fargs}
     θw = f(T, f_args...)
-    C = f_hc(θw)
+    C = f_hc(H,T,θw)
     Tres = T - (H - θw*L) / C
-    return Tres, θw, C
+    return residual_only ? Tres : (;Tres, θw, C)
 end
 """
     DallAmico{Tprop,Tg,Tswrc<:VanGenuchten} <: SFCCFunction
@@ -114,7 +120,6 @@ function (f::DallAmicoSalt)(T,θsat,θtot,L,θres=f.θres,Tₘ=f.Tₘ,saltconc=f
         g = f.prop.g,
         R = f.R,
         ρw = f.prop.ρw,
-        m = 1-1/n,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
         # freezing point depression based on salt concentration

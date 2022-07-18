@@ -1,10 +1,9 @@
 module FreezeCurves
 
+using Flatten
 using ForwardDiff
 using IfElse
-using NLsolve
 using Requires
-using SimpleTraits
 using Unitful
 
 const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
@@ -17,14 +16,7 @@ Base type for freezing characteristic curves which relate temperature or enthalp
 """
 abstract type FreezeCurve end
 
-abstract type FunctionStyle end
-struct Explicit <: FunctionStyle end
-struct Implicit <: FunctionStyle end
-FunctionStyle(::Type{T}) where {T} = error("FunctionStyle not defined for $T")
-FunctionStyle(::T) where {T} = FunctionStyle(T)
-
 # Free water freeze curve
-
 """
     FreeWater <: FreezeCurve
 
@@ -58,13 +50,18 @@ Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherw
 """
 normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
+"""
+    stripunits(x)
+
+Reconstructs the type or function `x` with all numerical quantities stripped of units.
+"""
+stripunits(x) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
 
 include("math.jl")
 export SWRC, VanGenuchten
 include("swrc.jl")
-export SFCC, DallAmico, McKenzie, Westermann
+export SFCC, SFCCFunction, SFCCSolver, SoilFreezingProperties, DallAmico, DallAmicoSalt, McKenzie, Westermann
 include("sfcc.jl")
-export SFCCNewtonSolver, SFCCPreSolver
-include("solvers/solvers.jl")
+include("Solvers/Solvers.jl")
 
 end

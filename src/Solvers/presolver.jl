@@ -42,7 +42,7 @@ function _build_interpolant(Hs, θs)
         Interpolations.Flat()
     )
 end
-function initialize!(solver::SFCCPreSolver, fc::SFCCFunction, heatcap::HC, θwi, θsat, f_args...; L=3.34e8) where {F,HC<:Function}
+function initialize!(obj::SFCCTemperatureObjective, solver::SFCCPreSolver)
     # pre-solve freeze curve;
     # note that this is only valid given that the following assumptions hold:
     # 1) none of the freeze curve parameters (e.g. soil properties) change

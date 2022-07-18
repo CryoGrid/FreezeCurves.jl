@@ -1,7 +1,7 @@
 """
     SFCCNewtonSolver <: SFCCSolver
 
-Specialized implementation of Newton's method with backtracking line search for resolving
+Fast, specialized implementation of Newton's method with backtracking line search for resolving
 the energy conservation law, H = TC + Lθ. Attempts to find the root of the corresponding
 temperature residual: ϵ = T - (H - Lθ(T)) / C(θ(T)) and uses backtracking to avoid
 jumping over the solution. This prevents convergence issues that arise due to
@@ -15,24 +15,30 @@ Base.@kwdef struct SFCCNewtonSolver <: SFCCSolver
     τ::Float64 = 0.7 # step size decay for backtracking
 end
 # Newton solver implementation
-function sfccsolve(solver::SFCCNewtonSolver, f::F, f_args, f_hc, L, H, T₀::Nothing=nothing) where {F}
-    T₀ = IfElse.ifelse(H < zero(H), H / f_hc(0.0), zero(H))
-    return sfccsolve(solver, f, f_args, f_hc, L, H, T₀)
-end
-using ForwardDiff
-function sfccsolve(solver::SFCCNewtonSolver, f::F, f_args, f_hc, L, H, T₀) where {F}
-    fc(T) = f(T, f_args...)
-    resid(T) = temperature_residual(f, f_args, f_hc, L, H, T)
+"""
+    sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀::Number; return_all=false, error_when_not_converged=true)
+
+Solves `obj` using the specialized Newton `solver` and returns the result. If `return_all` is `true`,
+a named tuple `(;T, Tres, θw, C, itercount)` is returned; otherwise (by default), only the solution temperature is returned.
+"""
+function sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀::Number; return_all=false, error_when_not_converged=true)
+    resid(T) = temperature_residual(obj.f, obj.f_args, obj.f_hc, obj.L, obj.H, T)
     T = T₀
     α₀ = solver.α₀
     τ = solver.τ
     # compute initial residual
     Tres, θw, C = resid(T)
     itercount = 0
-    T_converged = false
     while abs(Tres) > solver.abstol && abs(Tres) / abs(T) > solver.reltol
         if itercount >= solver.maxiter
-            return (;T, Tres, θw, itercount, T_converged)
+            iterstate = (;T, Tres, θw, itercount)
+            msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
+            if error_when_not_converged
+                error(msg)
+            else
+                @warn msg
+                return iterstate
+            end
         end
         # derivative of residual
         ∂Tres∂T = ForwardDiff.derivative(first ∘ resid, T)
@@ -45,8 +51,7 @@ function sfccsolve(solver::SFCCNewtonSolver, f::F, f_args, f_hc, L, H, T₀) whe
         # simple backtracking line search to avoid jumping over the solution
         while sign(T̂res) != sign(Tres)
             if inneritercount > 100
-                @warn "Backtracking failed; this should not happen. Current state: α=$α, T=$T, T̂=$T̂, residual $(T̂res), initial residual: $(Tres)"
-                return (;T, Tres, θw, itercount, T_converged)
+                error("Backtracking failed; this should not happen. There is a bug! Current state: α=$α, T=$T, T̂=$T̂, residual $(T̂res), initial residual: $(Tres)")
             end
             α = α*τ # decrease step size by τ
             T̂ = T - α*Tres # new guess for T
@@ -57,6 +62,5 @@ function sfccsolve(solver::SFCCNewtonSolver, f::F, f_args, f_hc, L, H, T₀) whe
         Tres = T̂res # update residual
         itercount += 1
     end
-    T_converged = true
-    return (;T, Tres, θw, itercount, T_converged)
+    return return_all ? (;T, Tres, θw, C, itercount) : T
 end
