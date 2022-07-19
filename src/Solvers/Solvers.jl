@@ -1,7 +1,14 @@
 module Solvers
 
     using ..FreezeCurves
+    using ..FreezeCurves: ∇
+
+    using ForwardDiff
+    using IfElse
+    using Interpolations
+    using NLsolve
     using StaticArrays
+    using Requires
     using Unitful
 
     export sfccsolve, SFCCTemperatureObjective
@@ -13,7 +20,7 @@ module Solvers
     """
     abstract type AbstractSFCCObjective end
     """
-        SFCCTemperatureObjective{TF,Targs,Thc,TL,TH} <: AbstractSFCCObjective
+        SFCCTemperatureObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH} <: AbstractSFCCObjective
 
     Optimization objective for finding a temperature, `T`, wich resolves the conservation equation:
     ```math
@@ -21,14 +28,14 @@ module Solvers
     ```
     given a fixed enthalpy value `H` and freeze curve arguments `f_args`.
     """
-    struct SFCCTemperatureObjective{TF,Targs,Thc,TL,TH} <: AbstractSFCCObjective
+    Base.@kwdef struct SFCCTemperatureObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH} <: AbstractSFCCObjective
         f::TF
-        f_args::Targs
-        f_hc::Thc
+        f_kwargs::Tkwargs
+        hc::Thc
         L::TL
         H::TH
     end
-    @inline (obj::SFCCTemperatureObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_args, obj.f_hc, obj.L, obj.H, T, true)
+    @inline (obj::SFCCTemperatureObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_args, obj.hc, obj.L, obj.H, T, true)
 
     """
         sfccsolve(obj::AbstractSFCCObjective, solver::SFCCSolver, x₀)
@@ -41,8 +48,11 @@ module Solvers
     include("heatcap.jl")
     export SFCCNewtonSolver
     include("newton.jl")
-    export SFCCNonlinearSolver
-    include("nlsolve.jl")
     export SFCCPreSolver
     include("presolver.jl")
+    # require NonlinearSolve.jl for generic nonlinear solver
+    @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin
+        export SFCCNonlinearSolver
+        include("nonlinearsolve.jl")
+    end
 end

@@ -1,10 +1,15 @@
 module FreezeCurves
 
-using Flatten
 using ForwardDiff
 using IfElse
+using RecipesBase
+using Reexport
 using Requires
-using Unitful
+@reexport using Setfield: @set, @set!
+@reexport using Unitful
+
+import Flatten
+import Unitful: ustrip
 
 const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
 const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:TemperatureUnit}
@@ -50,18 +55,22 @@ Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherw
 """
 normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
+
+include("math.jl")
+export SWRC, SoilWaterProperties, VanGenuchten
+include("swrc.jl")
+export SFCC, SFCCFunction, SFCCSolver, SoilFreezeThawProperties, DallAmico, DallAmicoSalt, McKenzie, Westermann
+include("sfcc.jl")
+include("Solvers/Solvers.jl")
+
+# Extra utilities
 """
-    stripunits(x)
+    ustrip(x)
 
 Reconstructs the type or function `x` with all numerical quantities stripped of units.
 """
-stripunits(x) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
+ustrip(x::Union{SFCCFunction,SWRCFunction}) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
 
-include("math.jl")
-export SWRC, VanGenuchten
-include("swrc.jl")
-export SFCC, SFCCFunction, SFCCSolver, SoilFreezingProperties, DallAmico, DallAmicoSalt, McKenzie, Westermann
-include("sfcc.jl")
-include("Solvers/Solvers.jl")
+include("plotting.jl")
 
 end
