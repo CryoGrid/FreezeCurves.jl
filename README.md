@@ -1,6 +1,6 @@
 # FreezeCurves.jl
 
-`FreezeCurves` is a lightweight Julia package to faciliate the study and analysis of [soil freezing characteristics](https://acsess.onlinelibrary.wiley.com/doi/abs/10.2136/sssaj1966.03615995003000060011x) (Koopmans and Miller, 1966). The relationship between temperature and unfrozen water content in porous media (such as soils) is often highly nonlinear and plays a significant role in the analysis of freeze-thaw dynamics in science and engineering. One common application is in the geophysical modeling of permafrost, where having faithful representations of freeze-thaw processes is often paramount to accurately resolving long-term changes in the subsurface thermal regime.
+`FreezeCurves` is a lightweight Julia package to facilitate the study and analysis of [soil freezing characteristics](https://acsess.onlinelibrary.wiley.com/doi/abs/10.2136/sssaj1966.03615995003000060011x) (Koopmans and Miller, 1966). The relationship between temperature and unfrozen water content in porous media (such as soils) is often highly nonlinear and plays a significant role in the analysis of freeze-thaw dynamics in science and engineering. One common application is in the geophysical modeling of permafrost, where having faithful representations of freeze-thaw processes is often paramount to accurately resolving long-term changes in the subsurface thermal regime.
 
 ## Overview
 
