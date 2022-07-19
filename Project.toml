@@ -18,6 +18,15 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Reexport = "1"
+IfElse = "0.1"
+Flatten = "0.4"
+Requires = "1"
+Setfield = "1"
+ForwardDiff = "0.10"
+NLsolve = "4"
+Unitful = "1"
+StaticArrays = "1"
+RecipesBase = "1"
 julia = "1.6"
 
 [extras]
