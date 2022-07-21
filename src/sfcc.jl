@@ -23,7 +23,7 @@ Base type representing non-linear solvers for implicit SFCC functions.
 """
 abstract type SFCCSolver end
 # never flatten SFCCSolver types
-Flatten.flattenable(::Type{<:SFCCSolver}, ::Any) = false
+Flatten.flattenable(::Type{<:SFCCSolver}, ::Type{Val{fieldname}}) where {fieldname} = false
 """
     SFCCTable{F,I} <: SFCCFunction
 

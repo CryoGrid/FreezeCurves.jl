@@ -13,6 +13,7 @@ import Unitful: ustrip
 
 export SFCC
 
+# convenience constants for temperature unit/quantity types
 const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
 const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:TemperatureUnit}
 
