@@ -49,7 +49,7 @@ using Base.Iterators
             props = SoilWaterProperties(fc)
             θtot, θsat = props.θtot, props.θsat
             hc = heatcapacity(1.9e6, 4.2e6; θtot)
-            Solvers.initialize!(solver, fc, hc, θtot, θsat; L)
+            Solvers.initialize!(solver, fc, hc; θtot, θsat)
             θw_true = fc(T_true; θtot, θsat)
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)

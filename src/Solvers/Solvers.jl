@@ -38,6 +38,13 @@ module Solvers
     @inline (obj::SFCCInverseEnthalpyObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, obj.H, T, Val{false}())
 
     """
+        initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...)
+
+    Initializes `solver` (if necessary) for the freeze curve function `fc` with arguments `fc_kwargs` and heat capacity function `hc`.
+    Default implementation does nothing.
+    """
+    initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...) = nothing
+    """
         sfccsolve(obj::AbstractSFCCObjective, solver::SFCCSolver, x₀, ::Val{return_all}=Val{true}()) where {return_all}
 
     Solve the given objective `obj` using `solver` and initial guess `x₀`. If `return_all=true`, then `sfccsolve` should return a named tuple

@@ -44,39 +44,42 @@ function _build_interpolant(H, θw)
     )
 end
 """
-    initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunction, hc::F, θtot::Real, θsat::Real, f_args...; L=3.34e8)
+    initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunction, hc::F; fc_kwargs...)
 
 Initializes this `SFCCPreSolver` by building interpolants for `fc` and its derivatives. `θtot` and `θsat` are assumed fixed.
 `hc` must be heat capacity as a function of liquid water content.
 """
-function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunction, hc::F, θtot::Real, θsat::Real; L=3.34e8, f_kwargs...) where {F}
+function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunction, hc::F; fc_kwargs...) where {F}
     # pre-solve freeze curve;
     # note that this is only valid given that the following assumptions hold:
     # 1) none of the freeze curve parameters (e.g. soil properties) change
     # 2) soil properties are uniform in `soil`
     let Tmin = solver.Tmin,
         Tmax = 0.0,
-        f_kwargs = (; f_kwargs...),
-        f(T) = fc(T; θtot, θsat, f_kwargs...),
+        ρw = SoilWaterProperties(fc).ρw,
+        Lsl = SoilFreezeThawProperties(fc).Lsl,
+        L = ρw*Lsl,
+        f_kwargs = (; fc_kwargs...),
+        f(T) = fc(T; f_kwargs...),
         Hmin = FreezeCurves.enthalpy(Tmin, hc(f(Tmin)), L, f(Tmin)),
         Hmax = FreezeCurves.enthalpy(Tmax, hc(f(Tmax)), L, f(Tmax));
         # residual as a function of T and H
         resid(T,H) = FreezeCurves.temperature_residual(fc, f_kwargs, hc, L, H, T)
         function solve(H,T₀)
             local T = nlsolve(T -> resid(T[1],H)[1], [T₀]).zero[1]
-            θw = f(T)
+            local θw = f(T)
             return (; T, θw)
         end
         function deriv(T) # implicit partial derivative w.r.t H as a function of T
-            θw, ∂θ∂T = ∇(f, T)
+            local θw, ∂θ∂T = ∇(f, T)
             # get dHdT
             _, ∂H∂T = ∇(T -> let θw=f(T); FreezeCurves.enthalpy(T, hc(θw), L, θw); end, T)
             # valid by chain rule and inverse function theorem
             return ∂θ∂T / ∂H∂T, ∂θ∂T
         end
-        function step(ΔH, H, θ, ∂θ∂H, T₀)
+        function step(ΔH, H, θw, ∂θ∂H, T₀)
             # get first order estimate
-            θest = θ + ΔH*∂θ∂H
+            θest = θw + ΔH*∂θ∂H
             # get true θ at H + ΔH
             θsol = solve(H + ΔH, T₀).θw
             err = abs(θsol - θest)
@@ -85,33 +88,33 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
         end
         T = [Tmin]
         H = [Hmin]
-        θ = [f(T[1])]
-        dθdT₀, dθdH₀ = deriv(T[1])
-        dθdT = [dθdT₀]
-        dθdH = [dθdH₀]
-        @assert isfinite(H[1]) && isfinite(θ[1]) "H=$H, θ=$θ"
+        θw = [f(T[1])]
+        dθwdT₀, dθwdH₀ = deriv(T[1])
+        dθwdT = [dθwdT₀]
+        dθwdH = [dθwdH₀]
+        @assert isfinite(H[1]) && isfinite(θw[1]) "H=$H, θw=$θw"
         while H[end] < Hmax
             # find the optimal step size
             ϵ = Inf
-            ΔH = L*θtot/10 # initially set to large value
+            ΔH = L/10 # initially set to (relatively) large value, 10% of latent heat of fusion
             while abs(ϵ) > solver.errtol
-                ϵ = step(ΔH, H[end], θ[end], dθdH[end], T[end])
+                ϵ = step(ΔH, H[end], θw[end], dθwdH[end], T[end])
                 # iteratively halve the step size until error tolerance is satisfied
                 ΔH *= 0.5
             end
             Hnew = H[end] + ΔH
             @assert isfinite(Hnew) "isfinite(ΔH) failed; H=$(H[end]), T=$(T[end]), ΔH=$ΔH"
             opt = solve(Hnew, T[end])
-            dθdHᵢ, dθdTᵢ = deriv(opt.T)
+            dθwdHᵢ, dθwdTᵢ = deriv(opt.T)
             push!(H, Hnew)
-            push!(θ, opt.θw)
+            push!(θw, opt.θw)
             push!(T, opt.T)
-            push!(dθdT, dθdTᵢ)
-            push!(dθdH, dθdHᵢ)
+            push!(dθwdT, dθwdTᵢ)
+            push!(dθwdH, dθwdHᵢ)
         end
-        solver.cache.f_H = _build_interpolant(H, θ)
+        solver.cache.f_H = _build_interpolant(H, θw)
         solver.cache.dθwdH = first ∘ _interpgrad(solver.cache.f_H)
-        solver.cache.dθwdT = _build_interpolant(T, dθdT)
+        solver.cache.dθwdT = _build_interpolant(T, dθwdT)
         solver.cache.initialized = true
     end
 end
