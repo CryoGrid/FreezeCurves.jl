@@ -54,3 +54,20 @@ function (f::VanGenuchten)(::typeof(inv), θ; θsat=f.water.θsat, θres=f.water
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α))
     end
 end
+"""
+    BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
+
+van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.
+    Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj 1980.03615995004400050002x.
+"""
+Base.@kwdef struct BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
+    water::Twp = SoilWaterProperties()
+    ψₛ::Tψₛ = 0.01u"m"
+    λ::Tλ = 0.2
+end
+function (f::BrooksCorey)(ψ; θsat=f.water.θsat, θres=f.water.θres, ψₛ=f.ψₛ, λ=f.λ)
+    IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat)
+end
+function (f::BrooksCorey)(::typeof(inv), θ; θsat=f.water.θsat, θres=f.water.θres, ψₛ=f.ψₛ, λ=f.λ)
+    IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ)
+end

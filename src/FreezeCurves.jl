@@ -11,6 +11,8 @@ using Requires
 import Flatten
 import Unitful: ustrip
 
+export SFCC
+
 const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
 const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:TemperatureUnit}
 
@@ -57,11 +59,26 @@ normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 include("math.jl")
-export SWRC, SoilWaterProperties, VanGenuchten
+export SWRCFunction, SoilWaterProperties, BrooksCorey, VanGenuchten
 include("swrc.jl")
-export SFCC, SFCCFunction, SFCCSolver, SoilFreezeThawProperties, DallAmico, DallAmicoSalt, McKenzie, Westermann
+export SFCCFunction, SFCCSolver, SoilFreezeThawProperties, DallAmico, DallAmicoSalt, McKenzie, Westermann
 include("sfcc.jl")
 include("Solvers/Solvers.jl")
+using .Solvers
+
+"""
+    SFCC{F,S} <: FreezeCurve
+
+Generic representation of the soil freezing characteristic curve along with a nonlinear `solver`
+for resolving the temperature-energy conservation law. The shape and parameters of the curve are
+determined by the implementation of SFCCFunction `f`.
+"""
+struct SFCC{F,S} <: FreezeCurve
+    f::F # freeze curve function f: (T,...) -> θ
+    solver::S # solver for H -> T or T -> H
+    SFCC(f::F, s::S=SFCCPreSolver()) where {F<:SFCCFunction,S<:SFCCSolver} = new{F,S}(f,s)
+end
+(sfcc::SFCC)(args...; kwargs...) = sfcc.f(args...; kwargs...)
 
 # Extra utilities
 """

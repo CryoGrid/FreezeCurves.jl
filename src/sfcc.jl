@@ -25,19 +25,6 @@ abstract type SFCCSolver end
 # never flatten SFCCSolver types
 Flatten.flattenable(::Type{<:SFCCSolver}, ::Any) = false
 """
-    SFCC{F,S} <: FreezeCurve
-
-Generic representation of the soil freezing characteristic curve along with a nonlinear `solver`
-for resolving the temperature-energy conservation law. The shape and parameters of the curve are
-determined by the implementation of SFCCFunction `f`.
-"""
-struct SFCC{F,S} <: FreezeCurve
-    f::F # freeze curve function f: (T,...) -> θ
-    solver::S # solver for H -> T or T -> H
-    SFCC(f::F, s::S=SFCCPreSolver()) where {F<:SFCCFunction,S<:SFCCSolver} = new{F,S}(f,s)
-end
-(sfcc::SFCC)(args...; kwargs...) = sfcc.f(args...; kwargs...)
-"""
     SFCCTable{F,I} <: SFCCFunction
 
 Pre-tabulated soil freezing characteristic curve. See `Tabulated` and `tabulate`.
