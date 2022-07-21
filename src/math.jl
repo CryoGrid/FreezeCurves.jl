@@ -5,7 +5,7 @@ Differentiable implementation of heaviside step function, i.e:
 
 ``h(x) = \\begin{cases} 1 & x ≥ 0 \\\\ 0 & x < 0 \\end{cases}``
 """
-heaviside(x) = IfElse.ifelse(x >= zero(x), one(x), zero(x))
+heaviside(x) = IfElse.ifelse(x >= zero(x), 1.0, 0.0)
 # Automatic differentiation
 ∇(f, x) = ∇(typeof(x), f, x)
 function ∇(::Type{T}, f, x) where {T}

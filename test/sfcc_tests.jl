@@ -40,4 +40,20 @@ using Unitful
             @test θw > 0.0 && θw < θtot
         end
     end
+    @testset "DallAmicoSalt freeze curve" begin
+        f = DallAmicoSalt()
+        let θtot = θsat = 0.8,
+            α = 4.0u"1/m",
+            n = 2.0,
+            Tₘ = 0.0u"°C",
+            saltconc = 800.0u"mol/m^3",
+            θres = 0.0;
+            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n), 0.0, atol=1e-3)
+            @test f(-0.1u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n) ≈ θtot
+            θw = f(-5.0u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n)
+            @test θw > 0.0 && θw < θtot
+            θw_nosalt = f(-5.0u"°C"; θtot,θsat,θres,Tₘ,saltconc=zero(saltconc),α,n)
+            @test θw > θw_nosalt
+        end
+    end
 end

@@ -10,7 +10,7 @@ abstract type SWRCFunction end
 Returns a function `(args...) -> f(inv, args...)` which, when implemented, evaluates the inverse of the
 soil water retention curve.
 """
-Base.inv(f::SWRCFunction) = (args...) -> f(inv, args...)
+Base.inv(f::SWRCFunction) = (args...; kwargs...) -> f(inv, args...; kwargs...)
 """
     SoilWaterProperties{Tρw,Tθres,Tθtot,Tθsat}
 
@@ -44,12 +44,12 @@ Base.@kwdef struct VanGenuchten{Twp,Tα,Tn} <: SWRCFunction
     α::Tα = 1.0u"1/m"
     n::Tn = 2.0
 end
-function (f::VanGenuchten)(ψ, θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
+function (f::VanGenuchten)(ψ; θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
     let m = 1-1/n;
         IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*(1 + (-α*ψ)^n)^(-m), θsat)
     end
 end
-function (f::VanGenuchten)(::typeof(inv), θ, θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
+function (f::VanGenuchten)(::typeof(inv), θ; θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
     let m = 1-1/n;
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α))
     end

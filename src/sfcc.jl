@@ -36,6 +36,7 @@ struct SFCC{F,S} <: FreezeCurve
     solver::S # solver for H -> T or T -> H
     SFCC(f::F, s::S=SFCCPreSolver()) where {F<:SFCCFunction,S<:SFCCSolver} = new{F,S}(f,s)
 end
+(sfcc::SFCC)(args...; kwargs...) = sfcc.f(args...; kwargs...)
 """
     SFCCTable{F,I} <: SFCCFunction
 
@@ -109,11 +110,11 @@ end
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
-        ψ₀ = f.swrc(inv, θtot, θsat, θres, α, n),
+        ψ₀ = f.swrc(inv, θtot; θsat, θres, α, n),
         Tstar = Tₘ + g*Tₘ/Lsl*ψ₀,
         # matric potential as a function of T (Dall'Amico)
         ψ = ψ₀ + Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T);
-        return f.swrc(ψ, θsat, θres, α, n)
+        return f.swrc(ψ; θsat, θres, α, n)
     end
 end
 """
@@ -152,12 +153,12 @@ function (f::DallAmicoSalt)(
         T = normalize_temperature(T),
         # freezing point depression based on salt concentration
         Tstar = Tₘ + Tₘ/Lf*(-R * saltconc * Tₘ),
-        ψ₀ = f.swrc(inv, θtot, θsat, θres, α, n),
+        ψ₀ = f.swrc(inv, θtot; θsat, θres, α, n),
         # water matric potential
         ψ = ψ₀ + Lf / (ρw * g * Tstar) * (T - Tstar) * heaviside(Tstar-T),
-        ψ = IfElse.ifelse(ψ < 0.0, ψ, 0.0);
+        ψ = IfElse.ifelse(ψ < zero(ψ), ψ, zero(ψ));
         # van Genuchten evaulation to get θw
-        return f.swrc(ψ,θres,θsat,α,n)
+        return f.swrc(ψ; θres, θsat, α, n)
     end
 end
 # method dispatch to get SWRC for DallAmico freeze curves
