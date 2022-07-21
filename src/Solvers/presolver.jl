@@ -115,11 +115,12 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
         solver.cache.initialized = true
     end
 end
-function sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCPreSolver, ::Any; return_all=false)
+function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCPreSolver, ::Any, ::Val{return_all}=Val{true}()) where {return_all}
     @assert solver.cache.initialized "solver not yet initialized"
     θw = solver.cache.f_H(obj.H)
-    T = (obj.H - obj.L*θw) / obj.hc(θw)
-    dθdH = solver.cache.dθwdH(obj.H)
-    dθdT = solver.cache.dθwdT(T)
-    return return_all ? (; T, θw, dθdH, dθdT) : T
+    C = obj.hc(θw)
+    T = (obj.H - obj.L*θw) / C
+    dθwdH = solver.cache.dθwdH(obj.H)
+    dθwdT = solver.cache.dθwdT(T)
+    return return_all ? (; T, θw, C, dθwdT, dθwdH) : T
 end

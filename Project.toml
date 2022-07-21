@@ -17,21 +17,24 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-Interpolations = "0.14"
-Reexport = "1"
-IfElse = "0.1"
 Flatten = "0.4"
+ForwardDiff = "0.10"
+IfElse = "0.1"
+Interpolations = "0.14"
+NLsolve = "4"
+RecipesBase = "1"
+Reexport = "1"
 Requires = "1"
 Setfield = "0.6, 0.7, 0.8, 1"
-ForwardDiff = "0.10"
-NLsolve = "4"
-Unitful = "1"
 StaticArrays = "1"
-RecipesBase = "1"
+Unitful = "1"
 julia = "1.6"
 
 [extras]
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 
 [targets]
-test = ["Test"]
+test = ["Test", "NonlinearSolve", "Optim", "Turing"]

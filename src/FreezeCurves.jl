@@ -25,21 +25,21 @@ abstract type FreezeCurve end
 """
     FreeWater <: FreezeCurve
 
-"Free water" freeze curve in terms of enthalpy (H), total water content (θwi), and
+"Free water" freeze curve in terms of enthalpy (H), total water content (θtot), and
 the latent heat of fusion of water (L).
 """
 struct FreeWater <: FreezeCurve end
-function freewater(H, L, θwi)
-    θwi = max(1e-8, θwi)
-    Lθ = L*θwi
+function freewater(H, L, θtot)
+    θtot = max(1e-8, θtot)
+    Lθ = L*θtot
     I_t = H > Lθ
     I_f = H <= 0.0
     I_c = (H > 0.0) && (H <= Lθ)
     # compute liquid water content -> heat capacity -> temperature
-    θw = (I_c*(H/Lθ) + I_t)θwi
+    θw = (I_c*(H/Lθ) + I_t)θtot
     return (;θw, I_t, I_f, I_c, Lθ)
 end
-(freeW::FreeWater)(H, θwi, L) = freewater(H, θwi, L).θw
+(freeW::FreeWater)(H, θtot, L) = freewater(H, θtot, L).θw
 
 """
     enthalpy(T, C, L, θw)

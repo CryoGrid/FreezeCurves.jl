@@ -75,16 +75,16 @@ Retrieves the nested `SoilWaterProperties` from the `SoilFreezeThawProperties` o
 """
 SoilWaterProperties(f::SFCCFunction) = f.water
 """
-    temperature_residual(f::F, f_args::Fargs, hc, L, H, T) where {F<:SFCCFunction,Fargs<:Tuple}
+    temperature_residual(f::F, f_args::Fargs, hc, L, H, T, ::Val{return_all}=Val{true}()) where {F<:SFCCFunction,Fargs<:Tuple,return_all}
     
 Helper function for updating θw, C, and the residual. `hc` should be a function `θw -> C`
 which computes the heat capacity from liquid water content (`θw`).
 """
-@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, residual_only=false) where {F<:SFCCFunction}
+@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, ::Val{return_all}=Val{true}()) where {F<:SFCCFunction,return_all}
     θw = f(T; f_kwargs...)
     C = hc(θw)
     Tres = T - (H - θw*L) / C
-    return residual_only ? Tres : (;Tres, θw, C)
+    return return_all ? (;Tres, θw, C) : Tres
 end
 """
     DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction

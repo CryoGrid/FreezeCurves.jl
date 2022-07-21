@@ -16,14 +16,14 @@ Base.@kwdef struct SFCCNewtonSolver <: SFCCSolver
 end
 # Newton solver implementation
 """
-    sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀::Number; return_all=false, error_when_not_converged=true)
+    sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, T₀::Number, ::Val{return_all}=Val{true}(); error_when_not_converged=true)
 
 Solves `obj` using the specialized Newton `solver` and returns the result. If `return_all` is `true`,
 a named tuple `(;T, Tres, θw, C, itercount)` is returned; otherwise (by default), only the solution temperature is returned.
 """
-function sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀::Number; return_all=false, error_when_not_converged=true)
-    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, obj.H, T)
-    T = T₀
+function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, T₀::Number, ::Val{return_all}=Val{true}(); error_when_not_converged=true) where {return_all}
+    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T)
+    T = adstrip(T₀)
     α₀ = solver.α₀
     τ = solver.τ
     # compute initial residual
@@ -31,14 +31,15 @@ function sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀
     itercount = 0
     while abs(Tres) > solver.abstol && abs(Tres) / abs(T) > solver.reltol
         if itercount >= solver.maxiter
-            iterstate = (;T, Tres, θw, itercount)
-            msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
-            if error_when_not_converged
-                error(msg)
-            else
-                @warn msg
-                return iterstate
-            end
+            iterstate = (;T, θw, C, dθwdT=NaN, Tres, itercount)
+            # msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
+            # if error_when_not_converged
+            #     error(msg)
+            # else
+            #     @warn msg
+            #     return iterstate
+            # end
+            return iterstate
         end
         # derivative of residual
         ∂Tres∂T = ForwardDiff.derivative(first ∘ resid, T)
@@ -62,5 +63,7 @@ function sfccsolve(obj::SFCCTemperatureObjective, solver::SFCCNewtonSolver, T₀
         Tres = T̂res # update residual
         itercount += 1
     end
-    return return_all ? (;T, Tres, θw, C, itercount) : T
+    # Re-evaluate freeze curve at solution
+    θw, dθwdT = ∇(T -> obj.f(T; obj.f_kwargs...), T)
+    return return_all ? (;T, θw, C, dθwdT, Tres, itercount) : T
 end
