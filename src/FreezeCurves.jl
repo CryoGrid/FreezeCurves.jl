@@ -13,6 +13,13 @@ import Unitful: ustrip
 
 export SFCC
 
+function __init__()
+    @require Turing="fce5fe82-541a-59a6-adf8-730c64b5f9a0" begin
+        using .Turing
+        include("Inference/Inference.jl")
+    end
+end
+
 # convenience constants for temperature unit/quantity types
 const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
 const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:TemperatureUnit}

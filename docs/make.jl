@@ -13,6 +13,7 @@ makedocs(modules=modules,
          authors="Brian Groenke, Moritz Langer, Jan Nitzbon",
          format=Documenter.HTML(prettyurls=!IS_LOCAL),
          pages=["Home" => "index.md",
+                "Inference" => "inference.md",
                 "API reference" => [
                        "FreezeCurves" => "api/FreezeCurves.md",
                        "Solvers" => "api/Solvers.md",

@@ -5,7 +5,7 @@
 ### Table of contents
 
 ```@contents
-Pages = ["index.md","api/index.md"]
+Pages = ["index.md","inference.md","api/index.md"]
 ```
 
 ## Overview

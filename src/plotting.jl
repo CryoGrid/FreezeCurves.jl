@@ -8,7 +8,7 @@ Simple plotting recipe for `SFCCFunction` which takes care of stripping units.
     xlabel := "Temperature (°C)"
     y := map(ustrip(fc) ∘ Base.Fix1(ustrip, u"°C"), T)
     ylabel := "Volumetric liquid water content"
-    leg := nothing
+    leg := :topleft
     ()
 end
 """
@@ -21,6 +21,6 @@ Simple plotting recipe for `SWRCFunction` which takes care of stripping units.
     xlabel := "Water matric potential (m)"
     y := map(ustrip(swrc) ∘ Base.Fix1(ustrip, u"m"), ψ)
     ylabel := "Volumetric liquid water content"
-    leg := nothing
+    leg := :topleft
     ()
 end

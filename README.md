@@ -53,7 +53,7 @@ mkfc(-1.0u"°C")
 1.860037988010418e-44
 ```
 
-The `McKenzie` struct contains default parameter settings necessary to evaluate the freeze curve. These can also be customized on construction. We could, for example, use a different value for the shape parameter, γ [K]
+The freeze curve function struct (here `McKenzie`) contains default parameter settings necessary to evaluate the freeze curve. These can also be customized on construction. We could, for example, use a different value for the shape parameter, γ [K]
 
 ```julia
 mkfc2 = McKenzie(γ=1.0u"K")
@@ -98,6 +98,21 @@ mkfc_nounits(-0.1)
 # output
 0.1839397205856375
 ```
+
+FreezeCurves.jl also provides some basic plotting recipes to help rapidly visualize freeze curves, e.g:
+
+```julia
+using Plots
+
+Trange = -5.0u"°C":0.01u"K":0.0u"°C"
+plot(Trange, Westermann(δ=0.01u"K"), label="δ=0.01", title="SFCC from Westermann et al. 2011")
+plot!(Trange, Westermann(δ=0.1u"K"), label="δ=0.1")
+plot!(Trange, Westermann(δ=0.2u"K"), label="δ=0.2")
+```
+
+![Freeze curve plots](img/freezecurves_westermann.png)
+
+For more details and examples, see the [documentation]().
 
 ## References
 

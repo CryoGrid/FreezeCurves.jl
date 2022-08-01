@@ -13,6 +13,15 @@ module Solvers
 
     export sfccsolve, SFCCInverseEnthalpyObjective
 
+    function __init__()
+        # require NonlinearSolve.jl for generic nonlinear solver
+        @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin
+            using .NonlinearSolve
+            export SFCCNonlinearSolver
+            include("nonlinearsolve.jl")
+        end
+    end
+
     """
         AbstractSFCCObjective
 
@@ -69,13 +78,4 @@ module Solvers
     include("newton.jl")
     export SFCCPreSolver
     include("presolver.jl")
-
-    function __init__()
-        # require NonlinearSolve.jl for generic nonlinear solver
-        @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin
-            using .NonlinearSolve
-            export SFCCNonlinearSolver
-            include("nonlinearsolve.jl")
-        end
-    end
 end
