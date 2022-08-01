@@ -3,7 +3,7 @@ using Documenter
 
 IS_LOCAL = haskey(ENV,"LOCALDOCS") && ENV["LOCALDOCS"] == "true"
 
-modules = [
+const modules = [
     FreezeCurves,
     FreezeCurves.Solvers,
 ]
