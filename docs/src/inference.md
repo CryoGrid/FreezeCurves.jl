@@ -4,7 +4,7 @@ Most soil freezing characteristic curves have one or more parameters which deter
 
 FreezeCurves.jl facilitates inference of these parameters via the [Turing.jl](https://turing.ml) probabilistic programming language. In order to keep FreezeCurves.jl as lightweight as possible, `Turing` is not included as a dependncy by default. It must be installed separately (`Pkg.add("Turing")`) to expose the `FreezeCurves.Inference` module.
 
-We can demonstrate this with an idealized test case where simply corrupt the temperature with isotropic Gaussian noise. Here we fit the van Genuchten parameters for the Dall'Amico (2011) freezing characteristic curve using the Bayesian probabilistic freeze curve model pre-sepcified in the `Inference` module. This model assumes that the measurement errors are normally distributed, which matches our idealized test case.
+We can demonstrate this with an idealized test case where simply corrupt the "true" liquid water content values with isotropic Gaussian noise. Here we fit the van Genuchten parameters for the Dall'Amico (2011) freezing characteristic curve using the Bayesian probabilistic freeze curve model pre-sepcified in the `Inference` module. This model assumes that the measurement errors are normally distributed, which matches our idealized test case.
 
 ```julia
 using Turing
@@ -72,6 +72,8 @@ Real measurement data can be used by simply replacing `Trange` and `θtrue` in t
 If you aren't interested in the full posterior distribution, Turing also provides a very convenient interface to get a *maximum a posteriori* (MAP) estimate (i.e. a mode of the posterior) using [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl):
 
 ```julia
+using Optim
+
 optimize(m, MAP(), LBFGS())
 # output
 ModeResult with maximized lp of 394.29
@@ -89,8 +91,6 @@ A      │
 Alternatively, one can ignore the prior entirely and just get a *maximum likelihood estimate*:
 
 ```julia
-using Optim
-
 # here we use the common LBFGS optimizer; see Optim.jl docs for more options
 optimize(m, MLE(), LBFGS())
 # output
