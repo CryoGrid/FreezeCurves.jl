@@ -34,6 +34,16 @@ for all `SWRCFunction` types. Default implementation retrieves the field `water`
 """
 SoilWaterProperties(f::SWRCFunction) = f.water
 """
+    waterpotential(f::SWRCFunction, θ; θsat=f.water.θsat, θres=f.water.θres, kwargs...)
+
+Returns the water potential at volumetric water content `θ` by evaluating the inverse of `f`.
+"""
+function waterpotential(f::SWRCFunction, θ; θsat=f.water.θsat, θres=f.water.θres, kwargs...)
+    let θsat = max(θ, θsat);
+        f(inv, θ; θsat, θres, kwargs...)
+    end
+end
+"""
     VanGenuchten{Twp,Tα,Tn} <: SWRCFunction
 
 van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.

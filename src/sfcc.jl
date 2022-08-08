@@ -84,24 +84,32 @@ Base.@kwdef struct DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
 @inline function (f::DallAmico)(
-    T;
+    T,
+    ψ₀=nothing,
+    ::Val{return_all}=Val{false}();
     θtot=f.swrc.water.θtot,
     θsat=f.swrc.water.θsat,
     θres=f.swrc.water.θres, 
     Tₘ=f.freezethaw.Tₘ,
-    α=f.swrc.α,
-    n=f.swrc.n
-)
+    swrc_kwargs...
+) where return_all
+    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
+    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
     let θsat = max(θtot, θsat),
+        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
-        ψ₀ = f.swrc(inv, θtot; θsat, θres, α, n),
         Tstar = Tₘ + g*Tₘ/Lsl*ψ₀,
         # matric potential as a function of T (Dall'Amico)
-        ψ = ψ₀ + Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T);
-        return f.swrc(ψ; θsat, θres, α, n)
+        ψ = ψ₀ + Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T),
+        θw = f.swrc(ψ; θsat, θres, swrc_kwargs...);
+        if return_all
+            return (; θw, ψ, Tstar)
+        else
+            return θw
+        end
     end
 end
 """
