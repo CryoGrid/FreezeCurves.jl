@@ -74,6 +74,49 @@ which computes the heat capacity from liquid water content (`θw`).
     return return_all ? (;Tres, θw, C) : Tres
 end
 """
+    PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+
+Painter SL, Karra S. Constitutive Model for Unfrozen Water Content in Subfreezing Unsaturated Soils. Vadose zone j. 2014 Apr;13(4):1-8.
+"""
+Base.@kwdef struct PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    freezethaw::Tftp = SoilFreezeThawProperties()
+    β::Tβ = 1.0
+    ω::Tω = 1/β
+    g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
+    swrc::Tswrc = VanGenuchten() # soil water retention curve
+end
+@inline function (f::PainterKarra)(
+    T,
+    ψ₀=nothing,
+    ::Val{return_all}=Val{false}();
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres, 
+    Tₘ=f.freezethaw.Tₘ,
+    β=f.β,
+    ω=f.ω,
+    swrc_kwargs...
+) where return_all
+    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
+    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
+    let θsat = max(θtot, θsat),
+        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, swrc_kwargs...),
+        g = f.g,
+        Lsl = f.freezethaw.Lsl,
+        Tₘ = normalize_temperature(Tₘ),
+        T = normalize_temperature(T),
+        Tstar = Tₘ + ω*g*Tₘ/Lsl*ψ₀,
+        # matric potential as a function of T (same as Dall'Amico but with β parameter)
+        ψ = ψ₀ + β*Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T),
+        θw = f.swrc(ψ; θsat, θres, swrc_kwargs...);
+        if return_all
+            return (; θw, ψ, Tstar)
+        else
+            return θw
+        end
+    end
+end
+"""
     DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
 
 Dall'Amico M, 2010. Coupled water and heat transfer in permafrost modeling. Ph.D. Thesis, University of Trento, pp. 43.
@@ -93,24 +136,11 @@ end
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where return_all
-    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
-    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
-    let θsat = max(θtot, θsat),
-        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, swrc_kwargs...),
-        g = f.g,
-        Lsl = f.freezethaw.Lsl,
-        Tₘ = normalize_temperature(Tₘ),
-        T = normalize_temperature(T),
-        Tstar = Tₘ + g*Tₘ/Lsl*ψ₀,
-        # matric potential as a function of T (Dall'Amico)
-        ψ = ψ₀ + Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T),
-        θw = f.swrc(ψ; θsat, θres, swrc_kwargs...);
-        if return_all
-            return (; θw, ψ, Tstar)
-        else
-            return θw
-        end
-    end
+    # Dall'Amico is a special case of Painter-Karra with ω = β = 1
+    pkfc = PainterKarra()
+    ω = 1.0
+    β = 1.0
+    return pkfc(T, ψ₀, Val{return_all}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
 """
     DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
@@ -129,7 +159,9 @@ Base.@kwdef struct DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunc
 end
 # DallAmico freeze curve with salt
 function (f::DallAmicoSalt)(
-    T;
+    T,
+    ψ₀=nothing,
+    ::Val{return_all}=Val{true}();
     θtot=f.swrc.water.θtot,
     θsat=f.swrc.water.θsat,
     θres=f.swrc.water.θres, 
@@ -137,8 +169,11 @@ function (f::DallAmicoSalt)(
     saltconc=f.saltconc,
     α=f.swrc.α,
     n=f.swrc.n
-)
+) where return_all
+    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
+    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
     let θsat = max(θtot, θsat),
+        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, α, n),
         g = f.g,
         R = f.R,
         ρw = f.swrc.water.ρw,
@@ -148,12 +183,16 @@ function (f::DallAmicoSalt)(
         T = normalize_temperature(T),
         # freezing point depression based on salt concentration
         Tstar = Tₘ + Tₘ/Lf*(-R * saltconc * Tₘ),
-        ψ₀ = f.swrc(inv, θtot; θsat, θres, α, n),
         # water matric potential
         ψ = ψ₀ + Lf / (ρw * g * Tstar) * (T - Tstar) * heaviside(Tstar-T),
         ψ = IfElse.ifelse(ψ < zero(ψ), ψ, zero(ψ));
         # van Genuchten evaulation to get θw
-        return f.swrc(ψ; θres, θsat, α, n)
+        θw = f.swrc(ψ; θres, θsat, α, n)
+        if return_all
+            return (; θw, ψ, Tstar)
+        else
+            return θw
+        end
     end
 end
 # method dispatch to get SWRC for DallAmico freeze curves
