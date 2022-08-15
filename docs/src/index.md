@@ -14,15 +14,16 @@ The soil freezing characteristic curve (SFCC) is typically a monotonic function 
 
 This package is intended to act as a living repository of SFCC/SWRC implementations which can then be fitted to data or consumed downstream by thermal or hydrological models such as CryoGrid (Westermann et al. 2022), or more specifically its [sibling Julia implementation](https://github.com/CryoGrid/CryoGrid.jl).
 
-Currently this package provides (or will provide) implementations of the following freeze curves:
+Currently this package provides implementations of the following freeze curves:
 
-| Name         | Description | Independent variable | Formulation |
-|--------------|-------------|------------|------------|
-| FreeWater   | Simple, piecewise-linear freeze/thaw scheme for pure "free" water. | Enthalpy | Explicit |
-| DallAmico  | Coupled water-retention model of Dall'Amico (2011). | Temperature | Explicit |
-| DallAmicoSalt  | Same as `DallAmico` but accounting for freezing point depressions due to salinity. | Temperature | Explicit |
-| McKenzie   | Exponential-type empirical model of McKenzie et al. (2007) | Temperature | Explicit |
-| Westermann | Nonlinear empirical model of Westermann et al. (2011)  | Temperature | Explicit |
+| Name         | Description | Independent variable |
+|--------------|-------------|------------|
+| `FreeWater`  | Simple, piecewise-linear, enthalpy-based freeze/thaw scheme for pure "free" water. | Enthalpy |
+| `PainterKarra` | Coupled temperature-water retention model of Painter et al. (2014) | Temperature |
+| `DallAmico`  | Coupled temperature-water retention model of Dall'Amico (2011). | Temperature |
+| `DallAmicoSalt`  | Same as `DallAmico` but accounting for freezing point depressions due to salinity. | Temperature |
+| `McKenzie`   | Exponential-type empirical model of McKenzie et al. (2007) | Temperature |
+| `Westermann` | Nonlinear empirical model of Westermann et al. (2011)  | Temperature |
 
 ## Getting started
 

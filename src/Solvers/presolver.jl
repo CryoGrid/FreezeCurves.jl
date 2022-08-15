@@ -13,7 +13,7 @@ struct SFCCPreSolver{TCache} <: SFCCSolver
     """
         SFCCPreSolver(Tmin=-60.0, errtol=1e-4)
 
-    Constructs a new `SFCCPreSolver` with minimum temperature `Tmin` and integration step `dH`.
+    Constructs a new `SFCCPreSolver` with minimum temperature `Tmin` and tolerance `errtol`.
     Enthalpy values below `H(Tmin)` under the given freeze curve will be extrapolated with a
     constant/flat function. `errtol` determines the permitted local error in the interpolant.
     """

@@ -13,7 +13,7 @@ The soil freezing characteristic curve (SFCC) is typically a monotonic function 
 
 This package is intended to act as a living repository of SFCC/SWRC implementations which can then be fitted to data or consumed downstream by thermal or hydrological models such as CryoGrid (Westermann et al. 2022), or more specifically its [sibling Julia implementation](https://github.com/CryoGrid/CryoGrid.jl).
 
-Currently this package provides (or will provide) implementations of the following freeze curves:
+Currently this package provides implementations of the following freeze curves:
 
 | Name         | Description | Independent variable |
 |--------------|-------------|------------|
