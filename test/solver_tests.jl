@@ -1,12 +1,13 @@
 using FreezeCurves
 using FreezeCurves.Solvers
+using ModelParameters
 using NonlinearSolve
 using Test
 
 using Base.Iterators
 
 @testset "Solvers" begin
-    freezecurves = (ustrip(McKenzie()), ustrip(Westermann()), ustrip(DallAmico()))
+    freezecurves = (ustrip(stripparams(McKenzie())), ustrip(stripparams(Westermann())), ustrip(stripparams(DallAmico())))
     T_cases = [1.0,-0.01,-0.1,-10.0]
     L = 3.34e8
     T₀ = -1.0

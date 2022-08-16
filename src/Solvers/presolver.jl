@@ -72,7 +72,7 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
         end
         function deriv(T) # implicit partial derivative w.r.t H as a function of T
             local θw, ∂θ∂T = ∇(f, T)
-            # get dHdT
+            # get ∂H∂T
             _, ∂H∂T = ∇(T -> let θw=f(T); FreezeCurves.enthalpy(T, hc(θw), L, θw); end, T)
             # valid by chain rule and inverse function theorem
             return ∂θ∂T / ∂H∂T, ∂θ∂T

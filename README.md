@@ -93,7 +93,8 @@ dafc.swrc.water.θsat
 Note also that FreezeCurves.jl **strictly uses unitful quantities** (from [Unitful.jl](https://github.com/PainterQubits/Unitful.jl)) to ensure physical coherence and avoid confusion between temperature units. The macro `u"°C"` applies units of degrees Celsius to the floating point number `-0.1` (the degree symbol can be typed in the Julia REPL or editor using `\degree` followed the `TAB` key). Speical method dispatches for `ustrip` are provided for freeze and water retention curve function types that will automatically strip the units from all fields nested within the function struct. **When used without units, all temperatures are assumed to be in degrees Celsius (°C)!**
 
 ```julia
-mkfc_nounits = ustrip(mkfc)
+# stripparams unwraps `Param` types from ModelParameters.jl
+mkfc_nounits = ustrip(stripparams(mkfc))
 mkfc_nounits(-0.1)
 # output
 0.1839397205856375

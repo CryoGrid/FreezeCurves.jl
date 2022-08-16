@@ -80,8 +80,8 @@ Painter SL, Karra S. Constitutive Model for Unfrozen Water Content in Subfreezin
 """
 Base.@kwdef struct PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    β::Tβ = 1.0
-    ω::Tω = 1/β
+    β::Tβ = Param(1.0, domain=OpenInterval(0,Inf))
+    ω::Tω = Param(1/β, domain=0..(1/β))
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
@@ -152,7 +152,7 @@ Angelopoulos M, Westermann S, Overduin P, Faguet A, Olenchenko V, Grosse G, Grig
 """
 Base.@kwdef struct DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    saltconc::Tsc = 890.0u"mol/m^3" # salt concentration
+    saltconc::Tsc = Param(890.0, units=u"mol/m^3", domain=Interval{:closed,:open}(0,Inf)) # salt concentration
     R::TR = 8.314459u"J/K/mol" #[J/K mol] universal gas constant
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
@@ -161,7 +161,7 @@ end
 function (f::DallAmicoSalt)(
     T,
     ψ₀=nothing,
-    ::Val{return_all}=Val{true}();
+    ::Val{return_all}=Val{false}();
     θtot=f.swrc.water.θtot,
     θsat=f.swrc.water.θsat,
     θres=f.swrc.water.θres, 
@@ -209,7 +209,7 @@ McKenzie JM, Voss CI, Siegel DI, 2007. Groundwater flow with energy transport an
 Base.@kwdef struct McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
     water::Twp = SoilWaterProperties()
-    γ::Tγ = 0.1u"K"
+    γ::Tγ = Param(0.1, units=u"K", domain=OpenInterval(0,Inf))
 end
 function (f::McKenzie)(
     T;
@@ -235,7 +235,7 @@ Westermann, S., Boike, J., Langer, M., Schuler, T. V., and Etzelmüller, B.: Mod
 Base.@kwdef struct Westermann{Tftp,Twp,Tδ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
     water::Twp = SoilWaterProperties()
-    δ::Tδ = 0.1u"K"
+    δ::Tδ = Param(0.1, units=u"K", domain=OpenInterval(0,Inf))
 end
 function (f::Westermann)(
     T;

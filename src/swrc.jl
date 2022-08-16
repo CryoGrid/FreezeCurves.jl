@@ -51,8 +51,8 @@ van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic cond
 """
 Base.@kwdef struct VanGenuchten{Twp,Tα,Tn} <: SWRCFunction
     water::Twp = SoilWaterProperties()
-    α::Tα = 1.0u"1/m"
-    n::Tn = 2.0
+    α::Tα = Param(1.0, units=u"1/m", domain=OpenInterval(0,Inf))
+    n::Tn = Param(2.0, domain=Interval{:closed,:open}(1,Inf))
 end
 function (f::VanGenuchten)(ψ; θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
     let m = 1-1/n;
@@ -72,8 +72,8 @@ van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic cond
 """
 Base.@kwdef struct BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
     water::Twp = SoilWaterProperties()
-    ψₛ::Tψₛ = 0.01u"m"
-    λ::Tλ = 0.2
+    ψₛ::Tψₛ = Param(0.01, units=u"m")
+    λ::Tλ = Param(0.2, domain=OpenInterval(0,Inf))
 end
 function (f::BrooksCorey)(ψ; θsat=f.water.θsat, θres=f.water.θres, ψₛ=f.ψₛ, λ=f.λ)
     IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat)

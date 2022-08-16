@@ -1,7 +1,9 @@
 module FreezeCurves
 
+using ModelParameters
 using ForwardDiff
 using IfElse
+using IntervalSets
 using RecipesBase
 using Reexport
 using Requires
