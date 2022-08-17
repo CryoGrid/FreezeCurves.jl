@@ -89,19 +89,19 @@ end
     T,
     ψ₀=nothing,
     ::Val{return_all}=Val{false}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres, 
+    θtot=stripparams(f.swrc.water.θtot),
+    θsat=stripparams(f.swrc.water.θsat),
+    θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
     swrc_kwargs...
 ) where return_all
-    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
-    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
     let θsat = max(θtot, θsat),
-        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, swrc_kwargs...),
+        ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
+        β = stripparams(β),
+        ω = stripparams(ω),
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
@@ -130,9 +130,9 @@ end
     T,
     ψ₀=nothing,
     ::Val{return_all}=Val{false}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres, 
+    θtot=stripparams(f.swrc.water.θtot),
+    θsat=stripparams(f.swrc.water.θsat),
+    θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where return_all
@@ -162,18 +162,16 @@ function (f::DallAmicoSalt)(
     T,
     ψ₀=nothing,
     ::Val{return_all}=Val{false}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres, 
+    θtot=stripparams(f.swrc.water.θtot),
+    θsat=stripparams(f.swrc.water.θsat),
+    θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     α=f.swrc.α,
     n=f.swrc.n
 ) where return_all
-    _waterpotential(ψ₀, θtot; kwargs...) = ψ₀
-    _waterpotential(::Nothing, θtot; kwargs...) = waterpotential(f.swrc, θtot; kwargs...)
     let θsat = max(θtot, θsat),
-        ψ₀ = _waterpotential(ψ₀, θtot; θsat, θres, α, n),
+        ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
         R = f.R,
         ρw = f.swrc.water.ρw,
@@ -212,11 +210,11 @@ Base.@kwdef struct McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
 end
 function (f::McKenzie)(
     T;
-    θtot=f.water.θtot,
-    θsat=f.water.θsat,
-    θres=f.water.θres,
-    Tₘ=f.freezethaw.Tₘ,
-    γ=f.γ
+    θtot=stripparams(f.water.θtot),
+    θsat=stripparams(f.water.θsat),
+    θres=stripparams(f.water.θres),
+    Tₘ=stripparams(f.freezethaw.Tₘ),
+    γ=stripparams(f.γ),
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
@@ -242,7 +240,7 @@ function (f::Westermann)(
     θsat=f.water.θsat,
     θres=f.water.θres,
     Tₘ=f.freezethaw.Tₘ,
-    δ=f.δ
+    δ=stripparams(f.δ),
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),

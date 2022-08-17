@@ -27,6 +27,19 @@ using Unitful
             @test θw > 0.0 && θw < θtot
         end
     end
+    @testset "PainterKarra freeze curve" begin
+        f = PainterKarra(β=1.0, ω=0.1)
+        let θtot = θsat = 0.8,
+            α = 4.0u"1/m",
+            n = 2.0,
+            Tₘ = 0.0u"°C",
+            θres = 0.0;
+            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,α,n), 0.0, atol=1e-3)
+            @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ θtot
+            θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
+            @test θw > 0.0 && θw < θtot
+        end
+    end
     @testset "DallAmico freeze curve" begin
         f = DallAmico()
         let θtot = θsat = 0.8,

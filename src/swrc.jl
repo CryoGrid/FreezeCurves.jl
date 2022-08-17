@@ -54,12 +54,12 @@ Base.@kwdef struct VanGenuchten{Twp,Tα,Tn} <: SWRCFunction
     α::Tα = Param(1.0, units=u"1/m", domain=OpenInterval(0,Inf))
     n::Tn = Param(2.0, domain=Interval{:closed,:open}(1,Inf))
 end
-function (f::VanGenuchten)(ψ; θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
+function (f::VanGenuchten)(ψ; θsat=stripparams(f.water.θsat), θres=stripparams(f.water.θres), α=stripparams(f.α), n=stripparams(f.n))
     let m = 1-1/n;
         IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*(1 + (-α*ψ)^n)^(-m), θsat)
     end
 end
-function (f::VanGenuchten)(::typeof(inv), θ; θsat=f.water.θsat, θres=f.water.θres, α=f.α, n=f.n)
+function (f::VanGenuchten)(::typeof(inv), θ; θsat=stripparams(f.water.θsat), θres=stripparams(f.water.θres), α=stripparams(f.α), n=stripparams(f.n))
     let m = 1-1/n;
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α))
     end
@@ -75,9 +75,9 @@ Base.@kwdef struct BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
     ψₛ::Tψₛ = Param(0.01, units=u"m")
     λ::Tλ = Param(0.2, domain=OpenInterval(0,Inf))
 end
-function (f::BrooksCorey)(ψ; θsat=f.water.θsat, θres=f.water.θres, ψₛ=f.ψₛ, λ=f.λ)
+function (f::BrooksCorey)(ψ; θsat=stripparams(f.water.θsat), θres=stripparams(f.water.θres), ψₛ=stripparams(f.ψₛ), λ=stripparams(f.λ))
     IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat)
 end
-function (f::BrooksCorey)(::typeof(inv), θ; θsat=f.water.θsat, θres=f.water.θres, ψₛ=f.ψₛ, λ=f.λ)
+function (f::BrooksCorey)(::typeof(inv), θ; θsat=stripparams(f.water.θsat), θres=stripparams(f.water.θres), ψₛ=stripparams(f.ψₛ), λ=stripparams(f.λ))
     IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ)
 end
