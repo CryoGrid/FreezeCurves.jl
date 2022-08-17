@@ -195,10 +195,9 @@ function (f::DallAmicoSalt)(
         end
     end
 end
-# method dispatch to get SWRC for DallAmico freeze curves
-swrc(f::Union{DallAmico,DallAmicoSalt}) = f.swrc
-# use water properties from SWRC for DallAmico
-SoilWaterProperties(f::Union{DallAmico,DallAmicoSalt}) = SoilWaterProperties(swrc(f))
+# method dispatches for SWRC-based freeze curves
+swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
+SoilWaterProperties(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterProperties(swrc(f))
 """
     McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
 
