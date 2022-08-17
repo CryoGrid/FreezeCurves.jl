@@ -167,8 +167,7 @@ function (f::DallAmicoSalt)(
     θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
-    α=f.swrc.α,
-    n=f.swrc.n
+    swrc_kwargs...
 ) where return_all
     let θsat = max(θtot, θsat),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
@@ -185,7 +184,7 @@ function (f::DallAmicoSalt)(
         ψ = ψ₀ + Lf / (ρw * g * Tstar) * (T - Tstar) * heaviside(Tstar-T),
         ψ = IfElse.ifelse(ψ < zero(ψ), ψ, zero(ψ));
         # van Genuchten evaulation to get θw
-        θw = f.swrc(ψ; θres, θsat, α, n)
+        θw = f.swrc(ψ; θres, θsat, swrc_kwargs...)
         if return_all
             return (; θw, ψ, Tstar)
         else
