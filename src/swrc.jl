@@ -34,11 +34,11 @@ for all `SWRCFunction` types. Default implementation retrieves the field `water`
 """
 SoilWaterProperties(f::SWRCFunction) = f.water
 """
-    swrc_inflection_point(f::SWRCFunction)
+    inflectionpoint(f::SWRCFunction)
 
 Returns the analytical solution for the inflection point (i.e. where ∂²θ/∂ψ² = 0) of the SWRC, if available.
 """
-swrc_inflection_point(f::SWRCFunction) = error("not implemented for $f")
+inflectionpoint(f::SWRCFunction) = error("not implemented for $f")
 """
     waterpotential(f::SWRCFunction, θ; θsat=f.water.θsat, θres=f.water.θres, kwargs...)
 
@@ -70,7 +70,7 @@ function (f::VanGenuchten)(::typeof(inv), θ; θsat=stripparams(f.water.θsat), 
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α))
     end
 end
-swrc_inflection_point(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
+inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
 """
     BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
 
@@ -88,4 +88,4 @@ end
 function (f::BrooksCorey)(::typeof(inv), θ; θsat=stripparams(f.water.θsat), θres=stripparams(f.water.θres), ψₛ=stripparams(f.ψₛ), λ=stripparams(f.λ))
     IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ)
 end
-swrc_inflection_point(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
+inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ

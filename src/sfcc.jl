@@ -62,11 +62,11 @@ Retrieves the nested `SoilWaterProperties` from the `SoilFreezeThawProperties` o
 """
 SoilWaterProperties(f::SFCCFunction) = f.water
 """
-    sfcc_inflection_point(f::SFCCFunction)
+    inflectionpoint(f::SFCCFunction)
 
 Returns the analytical inflection point (i.e. where ∂²θ/∂T^2 = 0), if available.
 """
-sfcc_inflection_point(f::SFCCFunction) = error("not implemented for $f")
+inflectionpoint(f::SFCCFunction) = error("not implemented for $f")
 """
     temperature_residual(f::F, f_args::Fargs, hc, L, H, T, ::Val{return_all}=Val{true}()) where {F<:SFCCFunction,Fargs<:Tuple,return_all}
     
@@ -122,7 +122,7 @@ end
         end
     end
 end
-function sfcc_inflection_point(
+function inflectionpoint(
     f::PainterKarra,
     ψ₀=nothing;
     θtot=stripparams(f.swrc.water.θtot),
@@ -133,7 +133,7 @@ function sfcc_inflection_point(
     ω=f.ω,
     swrc_kwargs...
 )
-    let ψstar = swrc_inflection_point(f.swrc; swrc_kwargs...),
+    let ψstar = inflectionpoint(f.swrc; swrc_kwargs...),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
         β = stripparams(β),
@@ -170,7 +170,7 @@ end
     β = 1.0
     return pkfc(T, ψ₀, Val{return_all}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
-function sfcc_inflection_point(
+function inflectionpoint(
     f::DallAmico,
     ψ₀=nothing;
     θtot=stripparams(f.swrc.water.θtot),
@@ -179,7 +179,7 @@ function sfcc_inflection_point(
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 )
-    return sfcc_inflection_point(PainterKarra(), ψ₀; θtot, θsat, θres, Tₘ, swrc_kwargs...)
+    return inflectionpoint(PainterKarra(), ψ₀; θtot, θsat, θres, Tₘ, swrc_kwargs...)
 end
 """
     DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction

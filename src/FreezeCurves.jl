@@ -50,10 +50,9 @@ normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 include("math.jl")
 export SWRCFunction, SoilWaterProperties, BrooksCorey, VanGenuchten
-export swrc_inflection_point
+export inflectionpoint
 include("swrc.jl")
 export SFCCFunction, SFCCSolver, SoilFreezeThawProperties, PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann
-export sfcc_inflection_point
 include("sfcc.jl")
 include("Solvers/Solvers.jl")
 using .Solvers
