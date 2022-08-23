@@ -21,16 +21,16 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNonlinearSolve
     u0 = @SVector[T₀]
     prob = NonlinearProblem{false}(f, u0)
     T = first(solve(prob, solver.nlsolver, solver.opts...))
-    θw, dθwdT = ∇(T -> obj.f(T; obj.f_kwargs...), T)
+    θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
     C = obj.hc(θw)
-    return return_all ? (; T, θw, C, dθwdT) : T
+    return return_all ? (; T, θw, C, ∂θw∂T) : T
 end
 function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNonlinearSolver, T₀::NTuple{2}, ::Val{return_all}=Val{true}()) where {return_all}
     resid(T) = obj(T) # extract residual from objective function return value
     f(T, p) = resid(T)
     prob = NonlinearProblem{false}(f, T₀)
     T = first(solve(prob, solver.nlsolver, solver.opts...))
-    θw, dθwdT = ∇(T -> obj.f(T; obj.f_kwargs...), T)
+    θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
     C = obj.hc(θw)
-    return return_all ? (; T, θw, C, dθwdT) : T
+    return return_all ? (; T, θw, C, ∂θw∂T) : T
 end

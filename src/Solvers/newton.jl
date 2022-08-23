@@ -31,7 +31,7 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, 
     itercount = 0
     while abs(Tres) > solver.abstol && abs(Tres) / abs(T) > solver.reltol
         if itercount >= solver.maxiter
-            iterstate = (;T, θw, C, dθwdT=NaN, Tres, itercount)
+            iterstate = (;T, θw, C, ∂θw∂T=NaN, Tres, itercount)
             # msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
             # if error_when_not_converged
             #     error(msg)
@@ -64,6 +64,6 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, 
         itercount += 1
     end
     # Re-evaluate freeze curve at solution
-    θw, dθwdT = ∇(T -> obj.f(T; obj.f_kwargs...), T)
-    return return_all ? (;T, θw, C, dθwdT, Tres, itercount) : T
+    θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
+    return return_all ? (;T, θw, C, ∂θw∂T, Tres, itercount) : T
 end

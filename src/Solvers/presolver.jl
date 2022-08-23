@@ -25,7 +25,7 @@ end
 mutable struct SFCCPreSolverCache1D{TFH,T∇FH,T∇FT}
     f_H::TFH # θw(H) interpolant
     dθwdH::T∇FH # derivative of θw(H) interpolant
-    dθwdT::T∇FT # ∂θ∂T interpolant
+    ∂θw∂T::T∇FT # ∂θ∂T interpolant
     initialized::Bool
     function SFCCPreSolverCache1D()
         # initialize with dummy functions to get type information;
@@ -89,8 +89,8 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
         T = [Tmin]
         H = [Hmin]
         θw = [f(T[1])]
-        dθwdT₀, dθwdH₀ = deriv(T[1])
-        dθwdT = [dθwdT₀]
+        ∂θw∂T₀, dθwdH₀ = deriv(T[1])
+        ∂θw∂T = [∂θw∂T₀]
         dθwdH = [dθwdH₀]
         @assert isfinite(H[1]) && isfinite(θw[1]) "H=$H, θw=$θw"
         while H[end] < Hmax
@@ -109,12 +109,12 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
             push!(H, Hnew)
             push!(θw, opt.θw)
             push!(T, opt.T)
-            push!(dθwdT, dθwdTᵢ)
+            push!(∂θw∂T, dθwdTᵢ)
             push!(dθwdH, dθwdHᵢ)
         end
         solver.cache.f_H = _build_interpolant(H, θw)
         solver.cache.dθwdH = first ∘ _interpgrad(solver.cache.f_H)
-        solver.cache.dθwdT = _build_interpolant(T, dθwdT)
+        solver.cache.∂θw∂T = _build_interpolant(T, ∂θw∂T)
         solver.cache.initialized = true
     end
 end
@@ -124,6 +124,6 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCPreSolver, ::A
     C = obj.hc(θw)
     T = (obj.H - obj.L*θw) / C
     dθwdH = solver.cache.dθwdH(obj.H)
-    dθwdT = solver.cache.dθwdT(T)
-    return return_all ? (; T, θw, C, dθwdT, dθwdH) : T
+    ∂θw∂T = solver.cache.∂θw∂T(T)
+    return return_all ? (; T, θw, C, ∂θw∂T, dθwdH) : T
 end
