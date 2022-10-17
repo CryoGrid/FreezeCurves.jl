@@ -19,10 +19,10 @@ end
     sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, T₀::Number, ::Val{return_all}=Val{true}(); error_when_not_converged=true)
 
 Solves `obj` using the specialized Newton `solver` and returns the result. If `return_all` is `true`,
-a named tuple `(;T, Tres, θw, C, itercount)` is returned; otherwise (by default), only the solution temperature is returned.
+a named tuple `(;T, Tres, θw, C, itercount)` is returned; otherwise (by default), only the temperature solution is returned.
 """
 function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, T₀::Number, ::Val{return_all}=Val{true}(); error_when_not_converged=true) where {return_all}
-    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T)
+    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.ψ₀))
     T = adstrip(T₀)
     α₀ = solver.α₀
     τ = solver.τ
@@ -32,13 +32,13 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, 
     while abs(Tres) > solver.abstol && abs(Tres) / abs(T) > solver.reltol
         if itercount >= solver.maxiter
             iterstate = (;T, θw, C, ∂θw∂T=NaN, Tres, itercount)
-            # msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
-            # if error_when_not_converged
-            #     error(msg)
-            # else
-            #     @warn msg
-            #     return iterstate
-            # end
+            msg = "Failed to converge within $(solver.maxiter) iterations: $iterstate"
+            if error_when_not_converged
+                error(msg)
+            else
+                @warn msg
+                return iterstate
+            end
             return iterstate
         end
         # derivative of residual

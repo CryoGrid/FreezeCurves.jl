@@ -21,7 +21,7 @@ using Base.Iterators
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
             res = sfccsolve(obj, solver, T₀)
             @test isapprox(res.T, T_true, atol=1e-3)
         end
@@ -38,7 +38,7 @@ using Base.Iterators
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
             # bracketing method requires a tuple range as initial guess
             res = sfccsolve(obj, solver, (-20.0,10.0))
             @test isapprox(res.T, T_true, atol=1e-3)
@@ -55,7 +55,7 @@ using Base.Iterators
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
             res = sfccsolve(obj, solver, T₀)
             @test isapprox(res.T, T_true, atol=1e-3)
         end

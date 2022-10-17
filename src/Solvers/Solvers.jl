@@ -37,14 +37,15 @@ module Solvers
     ```
     given a fixed enthalpy value `H` and freeze curve arguments `f_args`.
     """
-    Base.@kwdef struct SFCCInverseEnthalpyObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH} <: AbstractSFCCObjective
+    Base.@kwdef struct SFCCInverseEnthalpyObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH,Tψ} <: AbstractSFCCObjective
         f::TF
         f_kwargs::Tkwargs
         hc::Thc
         L::TL
         H::TH
+        ψ₀::Tψ = nothing
     end
-    @inline (obj::SFCCInverseEnthalpyObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, obj.H, T, Val{false}())
+    @inline (obj::SFCCInverseEnthalpyObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.ψ₀), Val{false}())
 
     """
         initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...)
@@ -71,6 +72,7 @@ module Solvers
     """
     adstrip(x::Number) = x
     adstrip(x::ForwardDiff.Dual) = adstrip(ForwardDiff.value(x))
+    adstrip(::Nothing) = nothing
 
     export heatcapacity
     include("heatcap.jl")
