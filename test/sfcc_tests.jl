@@ -1,4 +1,5 @@
 using FreezeCurves
+using ModelParameters
 using Test
 using Unitful
 
@@ -38,6 +39,13 @@ using Unitful
             @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ θtot
             θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
             @test θw > 0.0 && θw < θtot
+            f_stripped = stripparams(f)
+            res = f_stripped(-0.1u"°C", 0.0u"m", Val{:all}(); θtot,θsat,θres,Tₘ,α,n)
+            @test keys(res) == (:θw,:ψ,:Tstar)
+            ψ = f_stripped(-0.1u"°C", 0.0u"m", Val{:ψ}(); θtot,θsat,θres,Tₘ,α,n)
+            @test ψ == res.ψ
+            Tstar = f_stripped(-0.1u"°C", 0.0u"m", Val{:Tstar}(); θtot,θsat,θres,Tₘ,α,n)
+            @test Tstar == res.Tstar
         end
     end
     @testset "DallAmico freeze curve" begin
@@ -67,6 +75,13 @@ using Unitful
             @test θw > 0.0 && θw < θtot
             θw_nosalt = f(-5.0u"°C"; θtot,θsat,θres,Tₘ,saltconc=zero(saltconc),α,n)
             @test θw > θw_nosalt
+            f_stripped = stripparams(f)
+            res = f_stripped(-0.1u"°C", 0.0u"m", Val{:all}(); θtot,θsat,θres,Tₘ,α,n)
+            @test keys(res) == (:θw,:ψ,:Tstar)
+            ψ = f_stripped(-0.1u"°C", 0.0u"m", Val{:ψ}(); θtot,θsat,θres,Tₘ,α,n)
+            @test ψ == res.ψ
+            Tstar = f_stripped(-0.1u"°C", 0.0u"m", Val{:Tstar}(); θtot,θsat,θres,Tₘ,α,n)
+            @test Tstar == res.Tstar
         end
     end
 end

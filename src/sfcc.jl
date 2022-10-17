@@ -94,7 +94,7 @@ end
 @inline function (f::PainterKarra)(
     T,
     ψ₀=nothing,
-    ::Val{return_all}=Val{false}();
+    ::Val{output}=Val{:θw}();
     θtot=stripparams(f.swrc.water.θtot),
     θsat=stripparams(f.swrc.water.θsat),
     θres=stripparams(f.swrc.water.θres), 
@@ -102,7 +102,7 @@ end
     β=f.β,
     ω=f.ω,
     swrc_kwargs...
-) where return_all
+) where output
     let θsat = max(θtot, θsat),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
@@ -111,14 +111,20 @@ end
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
-        Tstar = Tₘ + ω*g*Tₘ/Lsl*ψ₀,
+        Tstar = Tₘ + ω*g*Tₘ/Lsl*ψ₀;
         # matric potential as a function of T (same as Dall'Amico but with β parameter)
-        ψ = ψ₀ + β*Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T),
-        θw = f.swrc(ψ; θsat, θres, swrc_kwargs...);
-        if return_all
+        ψ = ψ₀ + β*Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T)
+        # output is a compile-time constant so will be compiled away
+        if output == :all || output == true # allow 'true' for backwards compatibility w/ 0.4
+            θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
             return (; θw, ψ, Tstar)
-        else
+        elseif output == :θw || output == false # allow 'false' for backwards compatibility w/ 0.4
+            θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
             return θw
+        elseif output == :ψ
+            return ψ
+        elseif output == :Tstar
+            return Tstar
         end
     end
 end
@@ -157,18 +163,18 @@ end
 @inline function (f::DallAmico)(
     T,
     ψ₀=nothing,
-    ::Val{return_all}=Val{false}();
+    ::Val{output}=Val{:θw}();
     θtot=stripparams(f.swrc.water.θtot),
     θsat=stripparams(f.swrc.water.θsat),
     θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
-) where return_all
+) where output
     # Dall'Amico is a special case of Painter-Karra with ω = β = 1
     pkfc = PainterKarra()
     ω = 1.0
     β = 1.0
-    return pkfc(T, ψ₀, Val{return_all}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
+    return pkfc(T, ψ₀, Val{output}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
 function inflectionpoint(
     f::DallAmico,
@@ -200,14 +206,14 @@ end
 function (f::DallAmicoSalt)(
     T,
     ψ₀=nothing,
-    ::Val{return_all}=Val{false}();
+    ::Val{output}=Val{:θw}();
     θtot=stripparams(f.swrc.water.θtot),
     θsat=stripparams(f.swrc.water.θsat),
     θres=stripparams(f.swrc.water.θres), 
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     swrc_kwargs...
-) where return_all
+) where output
     let θsat = max(θtot, θsat),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
@@ -222,12 +228,17 @@ function (f::DallAmicoSalt)(
         # water matric potential
         ψ = ψ₀ + Lf / (ρw * g * Tstar) * (T - Tstar) * heaviside(Tstar-T),
         ψ = IfElse.ifelse(ψ < zero(ψ), ψ, zero(ψ));
-        # van Genuchten evaulation to get θw
-        θw = f.swrc(ψ; θres, θsat, swrc_kwargs...)
-        if return_all
+        # output is a compile-time constant so will be compiled away
+        if output == :all || output == true # allow 'true' for backwards compatibility w/ 0.4
+            θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
             return (; θw, ψ, Tstar)
-        else
+        elseif output == :θw || output == false # allow 'false' for backwards compatibility w/ 0.4
+            θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
             return θw
+        elseif output == :ψ
+            return ψ
+        elseif output == :Tstar
+            return Tstar
         end
     end
 end
