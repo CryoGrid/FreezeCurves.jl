@@ -6,8 +6,6 @@ using ..FreezeCurves.Solvers
 using ..Turing
 using ..Turing.Distributions
 
-using ModelParameters
-
 export SFCCModel, sfccpriors
 
 betaprior(mean, dispersion) = Beta(max(mean*dispersion,1), max((1-mean)*dispersion,1))
@@ -21,7 +19,7 @@ struct SFCCModel{Tfc<:SFCCFunction,Tlik,Tsp,Tsolver<:SFCCSolver}
     sfcc::SFCC{Tfc,Tsolver}
     sp::Tsp
     function SFCCModel(fc::SFCCFunction, likelihood_type=IsoNormal, sp=nothing; solver::SFCCSolver=SFCCNewtonSolver())
-        fc = ustrip(stripparams(fc))
+        fc = ustrip(fc)
         return new{typeof(fc),likelihood_type,typeof(sp),typeof(solver)}(SFCC(fc, solver), sp)
     end
 end

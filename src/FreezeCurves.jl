@@ -1,6 +1,5 @@
 module FreezeCurves
 
-using ModelParameters
 using ForwardDiff
 using IfElse
 using IntervalSets

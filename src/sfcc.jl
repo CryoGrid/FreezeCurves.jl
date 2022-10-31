@@ -89,8 +89,8 @@ Painter SL, Karra S. Constitutive Model for Unfrozen Water Content in Subfreezin
 """
 Base.@kwdef struct PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    β::Tβ = Param(1.0, domain=OpenInterval(0,Inf))
-    ω::Tω = Param(1/β, domain=0..(1/β))
+    β::Tβ = 1.0 # domain: (0,Inf)
+    ω::Tω = 1/β # domain: (0,1/β)
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
@@ -98,9 +98,9 @@ end
     T,
     ψ₀=nothing,
     ::Val{output}=Val{:θw}();
-    θtot=stripparams(f.swrc.water.θtot),
-    θsat=stripparams(f.swrc.water.θsat),
-    θres=stripparams(f.swrc.water.θres), 
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -109,8 +109,8 @@ end
     let θsat = max(θtot, θsat),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
-        β = stripparams(β),
-        ω = stripparams(ω),
+        β = β,
+        ω = ω,
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         T = normalize_temperature(T),
@@ -134,9 +134,9 @@ end
 function inflectionpoint(
     f::PainterKarra,
     ψ₀=nothing;
-    θtot=stripparams(f.swrc.water.θtot),
-    θsat=stripparams(f.swrc.water.θsat),
-    θres=stripparams(f.swrc.water.θres), 
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -145,8 +145,8 @@ function inflectionpoint(
     let ψstar = inflectionpoint(f.swrc; swrc_kwargs...),
         ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
         g = f.g,
-        β = stripparams(β),
-        ω = stripparams(ω),
+        β = β,
+        ω = ω,
         Lsl = f.freezethaw.Lsl,
         Tₘ = normalize_temperature(Tₘ),
         Tstar = Tₘ + ω*g*Tₘ/Lsl*ψ₀;
@@ -167,9 +167,9 @@ end
     T,
     ψ₀=nothing,
     ::Val{output}=Val{:θw}();
-    θtot=stripparams(f.swrc.water.θtot),
-    θsat=stripparams(f.swrc.water.θsat),
-    θres=stripparams(f.swrc.water.θres), 
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where output
@@ -182,9 +182,9 @@ end
 function inflectionpoint(
     f::DallAmico,
     ψ₀=nothing;
-    θtot=stripparams(f.swrc.water.θtot),
-    θsat=stripparams(f.swrc.water.θsat),
-    θres=stripparams(f.swrc.water.θres), 
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 )
@@ -200,7 +200,7 @@ Angelopoulos M, Westermann S, Overduin P, Faguet A, Olenchenko V, Grosse G, Grig
 """
 Base.@kwdef struct DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    saltconc::Tsc = Param(890.0, units=u"mol/m^3", domain=Interval{:closed,:open}(0,Inf)) # salt concentration
+    saltconc::Tsc = 890.0u"mol/m^3" # salt concentration
     R::TR = 8.314459u"J/K/mol" #[J/K mol] universal gas constant
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
@@ -210,9 +210,9 @@ function (f::DallAmicoSalt)(
     T,
     ψ₀=nothing,
     ::Val{output}=Val{:θw}();
-    θtot=stripparams(f.swrc.water.θtot),
-    θsat=stripparams(f.swrc.water.θsat),
-    θres=stripparams(f.swrc.water.θres), 
+    θtot=f.swrc.water.θtot,
+    θsat=f.swrc.water.θsat,
+    θres=f.swrc.water.θres,
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     swrc_kwargs...
@@ -258,15 +258,15 @@ McKenzie JM, Voss CI, Siegel DI, 2007. Groundwater flow with energy transport an
 Base.@kwdef struct McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
     water::Twp = SoilWaterProperties()
-    γ::Tγ = Param(0.1, units=u"K", domain=OpenInterval(0,Inf))
+    γ::Tγ = 0.1u"K" # domain (0,Inf)
 end
 function (f::McKenzie)(
     T;
-    θtot=stripparams(f.water.θtot),
-    θsat=stripparams(f.water.θsat),
-    θres=stripparams(f.water.θres),
-    Tₘ=stripparams(f.freezethaw.Tₘ),
-    γ=stripparams(f.γ),
+    θtot=f.water.θtot,
+    θsat=f.water.θsat,
+    θres=f.water.θres,
+    Tₘ=f.freezethaw.Tₘ,
+    γ=f.γ,
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
@@ -284,7 +284,7 @@ Westermann, S., Boike, J., Langer, M., Schuler, T. V., and Etzelmüller, B.: Mod
 Base.@kwdef struct Westermann{Tftp,Twp,Tδ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
     water::Twp = SoilWaterProperties()
-    δ::Tδ = Param(0.1, units=u"K", domain=OpenInterval(0,Inf))
+    δ::Tδ = 0.1u"K" # domain: (0,Inf)
 end
 function (f::Westermann)(
     T;
@@ -292,7 +292,7 @@ function (f::Westermann)(
     θsat=f.water.θsat,
     θres=f.water.θres,
     Tₘ=f.freezethaw.Tₘ,
-    δ=stripparams(f.δ),
+    δ=f.δ,
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
