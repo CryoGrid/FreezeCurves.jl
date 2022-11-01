@@ -1,7 +1,7 @@
 name = "FreezeCurves"
 uuid = "71e4ad71-e4f2-45a3-aa0a-91ffaa9676be"
 authors = ["Brian Groenke <brian.groenke@awi.de> and contributors"]
-version = "0.4.2"
+version = "0.5.0"
 
 [deps]
 Flatten = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
