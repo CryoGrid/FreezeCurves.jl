@@ -57,6 +57,8 @@ using Unitful
             @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ θtot
             θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
             @test θw > 0.0 && θw < θtot
+            pkfc = PainterKarra(swrc=VanGenuchten(α=α, n=n))
+            @test f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ pkfc(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
         end
     end
     @testset "DallAmicoSalt freeze curve" begin
