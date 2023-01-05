@@ -174,7 +174,7 @@ end
     swrc_kwargs...
 ) where output
     # Dall'Amico is a special case of Painter-Karra with ω = β = 1
-    pkfc = PainterKarra()
+    pkfc = PainterKarra(freezethaw=f.freezethaw, g=f.g, swrc=f.swrc)
     ω = 1.0
     β = 1.0
     return pkfc(T, ψ₀, Val{output}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
