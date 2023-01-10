@@ -7,6 +7,7 @@ arguments which will be passed to `solve`.
 struct SFCCNonlinearSolver{TSolver,TOpts} <: SFCCSolver
     nlsolver::TSolver
     opts::TOpts
+    SFCCNonlinearSolver(nlsolver, opts) = new{typeof(nlsolver),typeof(opts)}(nlsolver, opts)
     SFCCNonlinearSolver(nlsolver::TSolver=NewtonRaphson(); tol=1e-3, opts...) where {TSolver} = let opts = tuple(tol, opts...); new{TSolver,typeof(opts)}(nlsolver, opts) end
 end
 

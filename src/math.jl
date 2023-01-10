@@ -14,35 +14,39 @@ function ∇(::Type{T}, f, x) where {T}
 end
 # Function tabulation
 """
-    Tabulated(f, argknots...)
+    Tabulated(f; kwargs...)
 
 Alias for `tabulate` intended for function types.
 """
 Tabulated(f, argknots...) = tabulate(f, argknots...)
 """
-    tabulate(f, argknots::Pair{Symbol,<:Union{Number,AbstractArray}}...)
+    tabulate(f; kwargs...)
 
 Tabulates the given function `f` using a linear, multi-dimensional interpolant.
-Knots should be given as pairs `:arg => A` where `A` is a `StepRange` or `Vector`
-of input values (knots) at which to evaluate the function. `A` may also be a
-`Number`, in which case a pseudo-point interpolant will be used (i.e valid on
-`[A,A+ϵ]`). No extrapolation is provided by default but can be configured via
-`Interpolations.extrapolate`.
+Knots should be given as keyword arguments `arg = A` where `A` is a `StepRange`
+or `Vector` of input values (knots) at which to evaluate the function. `A` may
+also be a `Number`, in which case a pseudo-point interpolant will be used
+(i.e valid on `[A,A+ϵ]`). Note that all arguments to `f`
+must be accepted as keyword arguments.
 """
-function tabulate(f, argknots::Pair{Symbol,<:Union{Number,AbstractArray}}...)
+function tabulate(f; kwargs...)
     initknots(a::AbstractArray) = Interpolations.deduplicate_knots!(a)
     initknots(x::Number) = initknots([x,x])
     interp(::AbstractArray) = Gridded(Linear())
     interp(::Number) = Gridded(Constant())
     extrap(::AbstractArray) = Flat()
     extrap(::Number) = Throw()
-    names = map(first, argknots)
+    kwargs = (;kwargs...)
+    names = keys(kwargs)
     # get knots for each argument, duplicating if only one value is provided
-    knots = map(initknots, map(last, argknots))
-    f_argnames = argnames(f)
-    @assert all(map(name -> name ∈ names, f_argnames)) "Missing one or more arguments $f_argnames in $f"
-    arggrid = Iterators.product(knots...)
+    knots = map(initknots, values(kwargs))
+    griddims = map(length, Tuple(knots))
+    f_values = zeros(griddims)
+    Threads.@threads for inds in collect(Iterators.product(map(N -> 1:N, griddims)...))
+        args = map(getindex, knots, inds)
+        f_values[inds...] = f(; map(Pair, names, args)...)
+    end
     # evaluate function construct interpolant
-    f = extrapolate(interpolate(Tuple(knots), map(Base.splat(f), arggrid), map(interp ∘ last, argknots)), map(extrap ∘ last, argknots))
+    f = extrapolate(interpolate(Tuple(knots), f_values, map(interp, values(kwargs))), map(extrap, values(kwargs)))
     return f
 end
