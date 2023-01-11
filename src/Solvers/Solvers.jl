@@ -45,7 +45,7 @@ module Solvers
         H::TH
         ψ₀::Tψ = nothing
     end
-    @inline (obj::SFCCInverseEnthalpyObjective)(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.ψ₀), Val{false}())
+    @inline (obj::SFCCInverseEnthalpyObjective)(T) = first(FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.ψ₀)))
 
     """
         initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...)

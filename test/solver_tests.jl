@@ -5,6 +5,22 @@ using Test
 
 using Base.Iterators
 
+@testset "temperature_residual" begin
+    freezecurves = (ustrip(McKenzie()), ustrip(Westermann()), ustrip(DallAmico()))
+    L = 3.34e8
+    T₀ = -1.0
+    for fc in freezecurves
+        props = SoilWaterProperties(fc)
+        θtot, θsat = props.θtot, props.θsat
+        hc = heatcapacity(1.9e6, 4.2e6; θtot)
+        θw_true = fc(-0.01; θtot, θsat)
+        C_true = hc(θw_true)
+        H_true = FreezeCurves.enthalpy(-0.01, C_true, L, θw_true)
+        T_resid, θw, C = @inferred FreezeCurves.temperature_residual(fc, (;), hc, L, H_true, -0.1, nothing)
+        @test abs(T_resid) > 0
+    end
+end
+
 @testset "Solvers" begin
     freezecurves = (ustrip(McKenzie()), ustrip(Westermann()), ustrip(DallAmico()))
     T_cases = [1.0,-0.01,-0.1,-10.0]

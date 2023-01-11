@@ -1,7 +1,7 @@
 name = "FreezeCurves"
 uuid = "71e4ad71-e4f2-45a3-aa0a-91ffaa9676be"
 authors = ["Brian Groenke <brian.groenke@awi.de> and contributors"]
-version = "0.5.1"
+version = "0.5.2"
 
 [deps]
 Flatten = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
@@ -34,10 +34,11 @@ Unitful = "1"
 julia = "1.6"
 
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 
 [targets]
-test = ["Test", "NonlinearSolve", "Optim", "Turing"]
+test = ["Test", "BenchmarkTools", "NonlinearSolve", "Optim", "Turing"]

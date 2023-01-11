@@ -68,19 +68,19 @@ Returns the analytical inflection point (i.e. where ∂²θ/∂T^2 = 0), if avai
 """
 inflectionpoint(f::SFCCFunction) = error("not implemented for $f")
 """
-    temperature_residual(f::F, f_args::Fargs, hc, L, H, T, ::Val{return_all}=Val{true}()) where {F<:SFCCFunction,Fargs<:Tuple,return_all}
+    temperature_residual(f::F, f_args::Fargs, hc, L, H, T, ψ₀=nothing) where {F<:SFCCFunction}
     
 Helper function for updating θw, C, and the residual. `hc` should be a function `θw -> C`
 which computes the heat capacity from liquid water content (`θw`).
 """
-@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, ψ₀=nothing, ::Val{return_all}=Val{true}()) where {F<:SFCCFunction,return_all}
+@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, ψ₀=nothing) where {F<:SFCCFunction}
     # helper function to handle case where SFCC has no SWRC and thus does not accept ψ₀ as an argument
     _invoke_f(::Nothing, T, ψ₀) = f(T; f_kwargs...)
     _invoke_f(::SWRCFunction, T, ψ₀) = f(T, ψ₀; f_kwargs...)
     θw = _invoke_f(swrc(f), T, ψ₀)
     C = hc(θw)
     Tres = T - (H - θw*L) / C
-    return return_all ? (;Tres, θw, C) : Tres
+    return Tres, θw, C
 end
 """
     PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
