@@ -23,6 +23,8 @@ Currently this package provides implementations of the following freeze curves:
 | `DallAmicoSalt`  | Same as `DallAmico` but accounting for freezing point depressions due to salinity. | Temperature |
 | `McKenzie`   | Exponential-type empirical model of McKenzie et al. (2007) | Temperature |
 | `Westermann` | Nonlinear empirical model of Westermann et al. (2011)  | Temperature |
+| `Hu2020` | Reformulated power function model of Hu et al. (2020)  | Temperature |
+| `PowerLaw` | Common power law model of Lovell (1956) | Temperature |
 
 ## Getting started
 

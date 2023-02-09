@@ -51,7 +51,9 @@ include("math.jl")
 export SWRCFunction, SoilWaterVolume, BrooksCorey, VanGenuchten
 export inflectionpoint
 include("swrc.jl")
-export SFCCFunction, SFCCSolver, SoilFreezeThawProperties, PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann
+export SFCCFunction, SFCCSolver, SoilFreezeThawProperties
+export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Hu2020, PowerLaw
+export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
 include("Solvers/Solvers.jl")
 using .Solvers

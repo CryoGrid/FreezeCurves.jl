@@ -83,12 +83,12 @@ which computes the heat capacity from liquid water content (`θw`).
     return Tres, θw, C
 end
 """
-    PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
 
 Painter SL, Karra S. Constitutive Model for Unfrozen Water Content in Subfreezing Unsaturated Soils. Vadose zone j. 2014 Apr;13(4):1-8.
 """
-Base.@kwdef struct PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
-    freezethaw::Tftp = SoilFreezeThawProperties()
+Base.@kwdef struct PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
     β::Tβ = 1.0 # domain: (0,Inf)
     ω::Tω = 1/β # domain: (0,1/β)
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
@@ -153,12 +153,12 @@ function inflectionpoint(
     end
 end
 """
-    DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    DallAmico{TFT,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
 
 Dall'Amico M, 2010. Coupled water and heat transfer in permafrost modeling. Ph.D. Thesis, University of Trento, pp. 43.
 """
-Base.@kwdef struct DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
-    freezethaw::Tftp = SoilFreezeThawProperties()
+Base.@kwdef struct DallAmico{TFT,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
@@ -188,15 +188,15 @@ function inflectionpoint(
     return inflectionpoint(PainterKarra(), sat; θsat, θres, Tₘ, swrc_kwargs...)
 end
 """
-    DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    DallAmicoSalt{TFT,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
 
 Freeze curve from Dall'Amico (2011) with saline freezing point depression.
 
 Angelopoulos M, Westermann S, Overduin P, Faguet A, Olenchenko V, Grosse G, Grigoriev MN. Heat and salt flow in subsea permafrost
     modeled with CryoGRID2. Journal of Geophysical Research: Earth Surface. 2019 Apr;124(4):920-37.
 """
-Base.@kwdef struct DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
-    freezethaw::Tftp = SoilFreezeThawProperties()
+Base.@kwdef struct DallAmicoSalt{TFT,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
     saltconc::Tsc = 890.0u"mol/m^3" # salt concentration
     R::TR = 8.314459u"J/K/mol" #[J/K mol] universal gas constant
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
@@ -245,14 +245,14 @@ end
 swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
 SoilWaterVolume(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterVolume(swrc(f))
 """
-    McKenzie{Tftp,Tvol,Tγ} <: SFCCFunction
+    McKenzie{TFT,Tvol,Tγ} <: SFCCFunction
 
 McKenzie JM, Voss CI, Siegel DI, 2007. Groundwater flow with energy transport and water-ice phase change:
     numerical simulations, benchmarks, and application to freezing in peat bogs. Advances in Water Resources,
     30(4): 966–983. DOI: 10.1016/j.advwatres.2006.08.008.
 """
-Base.@kwdef struct McKenzie{Tftp,Tvol,Tγ} <: SFCCFunction
-    freezethaw::Tftp = SoilFreezeThawProperties()
+Base.@kwdef struct McKenzie{TFT,Tvol,Tγ} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
     vol::Tvol = SoilWaterVolume()
     γ::Tγ = 0.1u"K" # domain (0,Inf)
 end
@@ -267,18 +267,18 @@ function (f::McKenzie)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θsat-θres)*exp(-((T-Tₘ)/γ)^2), θtot)
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot)
     end
 end
 """
-    Westermann{Tftp,Tvol,Tδ} <: SFCCFunction
+    Westermann{TFT,Tvol,Tδ} <: SFCCFunction
 
 Westermann, S., Boike, J., Langer, M., Schuler, T. V., and Etzelmüller, B.: Modeling the impact of
     wintertime rain events on the thermal regime of permafrost, The Cryosphere, 5, 945–959,
     https://doi.org/10.5194/tc-5-945-2011, 2011. 
 """
-Base.@kwdef struct Westermann{Tftp,Tvol,Tδ} <: SFCCFunction
-    freezethaw::Tftp = SoilFreezeThawProperties()
+Base.@kwdef struct Westermann{TFT,Tvol,Tδ} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
     vol::Tvol = SoilWaterVolume()
     δ::Tδ = 0.1u"K" # domain: (0,Inf)
 end
@@ -293,6 +293,63 @@ function (f::Westermann)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres - (θsat-θres)*(δ/(T-Tₘ-δ)), θtot)
+        return IfElse.ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot)
     end
 end
+
+"""
+    Hu2020{TFT,Tvol,Tb}  <: SFCCFunction
+
+Soil freezing characteristic curve formulation of Hu et al. 2020.
+
+Hu G, Zhao L, Zhu X, Wu X, Wu T, Li R, Xie C, Hao J. Review of algorithms and parameterizations to determine unfrozen water content in frozen soil. Geoderma. 2020 Jun 1;368:114277.
+"""
+Base.@kwdef struct Hu2020{TFT,Tvol,Tb} <: SFCCFunction
+    freezethaw::TFT = SoilFreezeThawProperties()
+    vol::Tvol = SoilWaterVolume()
+    b::Tb = 0.01
+end
+function (f::Hu2020)(
+    T,
+    sat=1.0;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
+    Tₘ=f.freezethaw.Tₘ,
+    b=f.b,
+)
+    let T = normalize_temperature(T),
+        Tₘ = normalize_temperature(Tₘ),
+        θtot = sat*θsat;
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot)
+    end
+end
+
+"""
+    PowerLaw{Tvol,Tα,Tβ} <: SFCCFunction
+
+Commonly used power law relation of Lovell (1957).
+
+Lovell, C.: Temperature effects on phase composition and strength of partially frozen soil, Highway Research Board Bulletin, 168, 74–95, 1957.
+"""
+Base.@kwdef struct PowerLaw{Tvol,Tα,Tβ} <: SFCCFunction
+    vol::Tvol = SoilWaterVolume()
+    α::Tα = 0.01
+    β::Tβ = 0.5
+end
+function (f::PowerLaw)(
+    T,
+    sat=1.0;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
+    α=f.α,
+    β=f.β,
+)
+    let T = ustrip(normalize_temperature(T)),
+        Tₘ = ustrip(normalize_temperature(-α^(1/β))),
+        θtot = sat*θsat;
+        return IfElse.ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot)
+    end
+end
+
+const SUTRAIce_Exp = McKenzie
+const SUTRAIce_Power = PowerLaw

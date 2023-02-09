@@ -27,6 +27,30 @@ using Unitful
             @test θw > 0.0 && θw < θtot
         end
     end
+    @testset "Hu2020 freeze curve" begin
+        f = Hu2020()
+        let θtot = θsat = 0.8,
+            b = 0.001,
+            θres = 0.0,
+            Tₘ = 0.0u"°C";
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,b), 0.0, atol=1e-2)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,b) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,b)
+            @test θw > 0.0 && θw < θtot
+        end
+    end
+    @testset "PowerLaw freeze curve" begin
+        f = PowerLaw()
+        let θtot = θsat = 0.8,
+            α = 0.01,
+            β = 0.5,
+            θres = 0.0;
+            @test isapprox(f(-10.0u"°C"; θsat,θres,α,β), 0.0, atol=1e-2)
+            @test f(0.0u"°C"; θsat,θres,α,β) ≈ θtot
+            θw = f(-0.5u"°C"; θsat,θres,α,β)
+            @test θw > 0.0 && θw < θtot
+        end
+    end
     @testset "PainterKarra freeze curve" begin
         f = PainterKarra(β=1.0, ω=0.1)
         let θtot = θsat = 0.8,
