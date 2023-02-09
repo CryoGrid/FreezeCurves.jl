@@ -22,7 +22,7 @@ Solves `obj` using the specialized Newton `solver` and returns the result. If `r
 a named tuple `(;T, Tres, θw, C, itercount)` is returned; otherwise (by default), only the temperature solution is returned.
 """
 function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, T₀::Number, ::Val{return_all}=Val{true}(); error_when_not_converged=true) where {return_all}
-    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.ψ₀))
+    resid(T) = FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.sat))
     T = adstrip(T₀)
     α₀ = solver.α₀
     τ = solver.τ

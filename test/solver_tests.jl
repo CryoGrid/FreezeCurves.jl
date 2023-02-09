@@ -10,13 +10,13 @@ using Base.Iterators
     L = 3.34e8
     T₀ = -1.0
     for fc in freezecurves
-        props = SoilWaterProperties(fc)
-        θtot, θsat = props.θtot, props.θsat
-        hc = heatcapacity(1.9e6, 4.2e6; θtot)
-        θw_true = fc(-0.01; θtot, θsat)
+        vol = SoilWaterVolume(fc)
+        θsat = vol.θsat
+        hc = heatcapacity(1.9e6, 4.2e6; θtot=θsat)
+        θw_true = fc(-0.01; θsat)
         C_true = hc(θw_true)
         H_true = FreezeCurves.enthalpy(-0.01, C_true, L, θw_true)
-        T_resid, θw, C = @inferred FreezeCurves.temperature_residual(fc, (;), hc, L, H_true, -0.1, nothing)
+        T_resid, θw, C = @inferred FreezeCurves.temperature_residual(fc, (;), hc, L, H_true, -0.1, 1.0)
         @test abs(T_resid) > 0
     end
 end
@@ -29,14 +29,14 @@ end
     @testset "Newton" begin
         solver = SFCCNewtonSolver(abstol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            props = SoilWaterProperties(fc)
-            θtot, θsat = props.θtot, props.θsat
-            hc = heatcapacity(1.9e6, 4.2e6; θtot)
-            θw_true = fc(T_true; θtot, θsat)
+            vol = SoilWaterVolume(fc)
+            θsat = vol.θsat
+            hc = heatcapacity(1.9e6, 4.2e6; θtot=θsat)
+            θw_true = fc(T_true; θsat)
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θsat), hc, L, H_true, 1.0)
             res = sfccsolve(obj, solver, T₀)
             @test isapprox(res.T, T_true, atol=1e-3)
         end
@@ -46,14 +46,14 @@ end
         # convergence issues for some freeze curves and initial guesses.
         solver = SFCCNonlinearSolver(Falsi(), abstol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            props = SoilWaterProperties(fc)
-            θtot, θsat = props.θtot, props.θsat
-            hc = heatcapacity(1.9e6, 4.2e6; θtot)
-            θw_true = fc(T_true; θtot, θsat)
+            vol = SoilWaterVolume(fc)
+            θsat = vol.θsat
+            hc = heatcapacity(1.9e6, 4.2e6; θtot=θsat)
+            θw_true = fc(T_true; θsat)
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θsat), hc, L, H_true, 1.0)
             # bracketing method requires a tuple range as initial guess
             res = sfccsolve(obj, solver, (-20.0,10.0))
             @test isapprox(res.T, T_true, atol=1e-3)
@@ -62,15 +62,15 @@ end
     @testset "Presolver" begin
         solver = SFCCPreSolver(errtol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            props = SoilWaterProperties(fc)
-            θtot, θsat = props.θtot, props.θsat
-            hc = heatcapacity(1.9e6, 4.2e6; θtot)
-            Solvers.initialize!(solver, fc, hc; θtot, θsat)
-            θw_true = fc(T_true; θtot, θsat)
+            vol = SoilWaterVolume(fc)
+            θsat = vol.θsat
+            hc = heatcapacity(1.9e6, 4.2e6; θtot=θsat)
+            Solvers.initialize!(solver, fc, hc; θsat)
+            θw_true = fc(T_true; θsat)
             C_true = hc(θw_true)
             H_true = FreezeCurves.enthalpy(T_true, C_true, L, θw_true)
             # use default freeze curve parameter values
-            obj = SFCCInverseEnthalpyObjective(fc, (; θtot, θsat), hc, L, H_true, nothing)
+            obj = SFCCInverseEnthalpyObjective(fc, (; θsat), hc, L, H_true, 1.0)
             res = sfccsolve(obj, solver, T₀)
             @test isapprox(res.T, T_true, atol=1e-3)
         end

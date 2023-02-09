@@ -48,7 +48,7 @@ normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 include("math.jl")
-export SWRCFunction, SoilWaterProperties, BrooksCorey, VanGenuchten
+export SWRCFunction, SoilWaterVolume, BrooksCorey, VanGenuchten
 export inflectionpoint
 include("swrc.jl")
 export SFCCFunction, SFCCSolver, SoilFreezeThawProperties, PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann

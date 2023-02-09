@@ -56,11 +56,11 @@ Retrieves the default `SoilFreezeThawProperties` from `f`; should be defined for
 """
 SoilFreezeThawProperties(f::SFCCFunction) = f.freezethaw
 """
-    SoilWaterProperties(f::SFCCFunction)
+    SoilWaterVolume(f::SFCCFunction)
 
-Retrieves the nested `SoilWaterProperties` from the `SoilFreezeThawProperties` of the freeze curve `f`.
+Retrieves the nested `SoilWaterVolume` from the `SoilFreezeThawProperties` of the freeze curve `f`.
 """
-SoilWaterProperties(f::SFCCFunction) = f.water
+SoilWaterVolume(f::SFCCFunction) = f.vol
 """
     inflectionpoint(f::SFCCFunction)
 
@@ -73,11 +73,11 @@ inflectionpoint(f::SFCCFunction) = error("not implemented for $f")
 Helper function for updating θw, C, and the residual. `hc` should be a function `θw -> C`
 which computes the heat capacity from liquid water content (`θw`).
 """
-@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, ψ₀=nothing) where {F<:SFCCFunction}
+@inline function temperature_residual(f::F, f_kwargs::NamedTuple, hc, L, H, T, sat=1.0) where {F<:SFCCFunction}
     # helper function to handle case where SFCC has no SWRC and thus does not accept ψ₀ as an argument
-    _invoke_f(::Nothing, T, ψ₀) = f(T; f_kwargs...)
-    _invoke_f(::SWRCFunction, T, ψ₀) = f(T, ψ₀; f_kwargs...)
-    θw = _invoke_f(swrc(f), T, ψ₀)
+    _invoke_f(::Nothing, T, sat) = f(T; f_kwargs...)
+    _invoke_f(::SWRCFunction, T, sat) = f(T, sat; f_kwargs...)
+    θw = _invoke_f(swrc(f), T, sat)
     C = hc(θw)
     Tres = T - (H - θw*L) / C
     return Tres, θw, C
@@ -96,18 +96,17 @@ Base.@kwdef struct PainterKarra{Tftp,Tβ,Tω,Tg,Tswrc<:SWRCFunction} <: SFCCFunc
 end
 @inline function (f::PainterKarra)(
     T,
-    ψ₀=nothing,
+    sat=1.0,
     ::Val{output}=Val{:θw}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres,
+    θsat=f.swrc.vol.θsat,
+    θres=f.swrc.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
     swrc_kwargs...
 ) where output
-    let θsat = max(θtot, θsat),
-        ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
+    let θtot = sat*θsat,
+        ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         β = β,
         ω = ω,
@@ -133,17 +132,17 @@ end
 end
 function inflectionpoint(
     f::PainterKarra,
-    ψ₀=nothing;
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres,
+    sat=1.0;
+    θsat=f.swrc.vol.θsat,
+    θres=f.swrc.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
     swrc_kwargs...
 )
-    let ψstar = inflectionpoint(f.swrc; swrc_kwargs...),
-        ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
+    let θtot = sat*θsat,
+        ψstar = inflectionpoint(f.swrc; swrc_kwargs...),
+        ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         β = β,
         ω = ω,
@@ -165,11 +164,10 @@ Base.@kwdef struct DallAmico{Tftp,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
 end
 @inline function (f::DallAmico)(
     T,
-    ψ₀=nothing,
+    sat=1.0,
     ::Val{output}=Val{:θw}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres,
+    θsat=f.swrc.vol.θsat,
+    θres=f.swrc.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where output
@@ -177,18 +175,17 @@ end
     pkfc = PainterKarra(freezethaw=f.freezethaw, g=f.g, swrc=f.swrc)
     ω = 1.0
     β = 1.0
-    return pkfc(T, ψ₀, Val{output}(); θtot, θsat, θres, Tₘ, ω, β, swrc_kwargs...)
+    return pkfc(T, sat, Val{output}(); θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
 function inflectionpoint(
     f::DallAmico,
-    ψ₀=nothing;
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres,
+    sat=1.0;
+    θsat=f.swrc.vol.θsat,
+    θres=f.swrc.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 )
-    return inflectionpoint(PainterKarra(), ψ₀; θtot, θsat, θres, Tₘ, swrc_kwargs...)
+    return inflectionpoint(PainterKarra(), sat; θsat, θres, Tₘ, swrc_kwargs...)
 end
 """
     DallAmicoSalt{Tftp,Tsc,TR,Tg,Tswrc<:SWRCFunction} <: SFCCFunction
@@ -208,20 +205,19 @@ end
 # DallAmico freeze curve with salt
 function (f::DallAmicoSalt)(
     T,
-    ψ₀=nothing,
+    sat=1.0,
     ::Val{output}=Val{:θw}();
-    θtot=f.swrc.water.θtot,
-    θsat=f.swrc.water.θsat,
-    θres=f.swrc.water.θres,
+    θsat=f.swrc.vol.θsat,
+    θres=f.swrc.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     swrc_kwargs...
 ) where output
-    let θsat = max(θtot, θsat),
-        ψ₀ = isnothing(ψ₀) ? waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...) : ψ₀,
+    let θtot = sat*θsat,
+        ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         R = f.R,
-        ρw = f.swrc.water.ρw,
+        ρw = f.swrc.vol.ρw,
         Lsl = f.freezethaw.Lsl,
         Lf = Lsl*ρw,
         Tₘ = normalize_temperature(Tₘ),
@@ -247,56 +243,56 @@ function (f::DallAmicoSalt)(
 end
 # method dispatches for SWRC-based freeze curves
 swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
-SoilWaterProperties(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterProperties(swrc(f))
+SoilWaterVolume(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterVolume(swrc(f))
 """
-    McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
+    McKenzie{Tftp,Tvol,Tγ} <: SFCCFunction
 
 McKenzie JM, Voss CI, Siegel DI, 2007. Groundwater flow with energy transport and water-ice phase change:
     numerical simulations, benchmarks, and application to freezing in peat bogs. Advances in Water Resources,
     30(4): 966–983. DOI: 10.1016/j.advwatres.2006.08.008.
 """
-Base.@kwdef struct McKenzie{Tftp,Twp,Tγ} <: SFCCFunction
+Base.@kwdef struct McKenzie{Tftp,Tvol,Tγ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    water::Twp = SoilWaterProperties()
+    vol::Tvol = SoilWaterVolume()
     γ::Tγ = 0.1u"K" # domain (0,Inf)
 end
 function (f::McKenzie)(
-    T;
-    θtot=f.water.θtot,
-    θsat=f.water.θsat,
-    θres=f.water.θres,
+    T,
+    sat=1.0;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     γ=f.γ,
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
-        θsat = max(θtot, θsat);
+        θtot = sat*θsat;
         return IfElse.ifelse(T <= Tₘ, θres + (θsat-θres)*exp(-((T-Tₘ)/γ)^2), θtot)
     end
 end
 """
-    Westermann{Tftp,Twp,Tδ} <: SFCCFunction
+    Westermann{Tftp,Tvol,Tδ} <: SFCCFunction
 
 Westermann, S., Boike, J., Langer, M., Schuler, T. V., and Etzelmüller, B.: Modeling the impact of
     wintertime rain events on the thermal regime of permafrost, The Cryosphere, 5, 945–959,
     https://doi.org/10.5194/tc-5-945-2011, 2011. 
 """
-Base.@kwdef struct Westermann{Tftp,Twp,Tδ} <: SFCCFunction
+Base.@kwdef struct Westermann{Tftp,Tvol,Tδ} <: SFCCFunction
     freezethaw::Tftp = SoilFreezeThawProperties()
-    water::Twp = SoilWaterProperties()
+    vol::Tvol = SoilWaterVolume()
     δ::Tδ = 0.1u"K" # domain: (0,Inf)
 end
 function (f::Westermann)(
-    T;
-    θtot=f.water.θtot,
-    θsat=f.water.θsat,
-    θres=f.water.θres,
+    T,
+    sat=1.0;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
     δ=f.δ,
 )
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
-        θsat = max(θtot, θsat);
+        θtot = sat*θsat;
         return IfElse.ifelse(T <= Tₘ, θres - (θsat-θres)*(δ/(T-Tₘ-δ)), θtot)
     end
 end

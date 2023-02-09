@@ -56,7 +56,7 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCCFunc
     # 2) soil properties are uniform in `soil`
     let Tmin = solver.Tmin,
         Tmax = 0.0,
-        ρw = SoilWaterProperties(fc).ρw,
+        ρw = SoilWaterVolume(fc).ρw,
         Lsl = SoilFreezeThawProperties(fc).Lsl,
         L = ρw*Lsl,
         f_kwargs = (; fc_kwargs...),

@@ -9,9 +9,9 @@ using Unitful
             γ = 1.0u"K",
             θres = 0.0,
             Tₘ = 0.0u"°C";
-            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,γ), 0.0, atol=1e-6)
-            @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,γ) ≈ θtot
-            θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,γ)
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,γ), 0.0, atol=1e-6)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,γ) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,γ)
             @test θw > 0.0 && θw < θtot
         end
     end
@@ -21,9 +21,9 @@ using Unitful
             δ = 0.1u"K",
             θres = 0.0,
             Tₘ = 0.0u"°C";
-            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,δ), 0.0, atol=1e-2)
-            @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,δ) ≈ θtot
-            θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,δ)
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,δ), 0.0, atol=1e-2)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,δ) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,δ)
             @test θw > 0.0 && θw < θtot
         end
     end
@@ -34,15 +34,15 @@ using Unitful
             n = 2.0,
             Tₘ = 0.0u"°C",
             θres = 0.0;
-            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,α,n), 0.0, atol=1e-3)
-            @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ θtot
-            θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,α,n), 0.0, atol=1e-3)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,α,n) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,α,n)
             @test θw > 0.0 && θw < θtot
-            res = f(-0.1u"°C", 0.0u"m", Val{:all}(); θtot,θsat,θres,Tₘ,α,n)
+            res = f(-0.1u"°C", 1.0, Val{:all}(); θsat,θres,Tₘ,α,n)
             @test keys(res) == (:θw,:ψ,:Tstar)
-            ψ = f(-0.1u"°C", 0.0u"m", Val{:ψ}(); θtot,θsat,θres,Tₘ,α,n)
+            ψ = f(-0.1u"°C", 1.0, Val{:ψ}(); θsat,θres,Tₘ,α,n)
             @test ψ == res.ψ
-            Tstar = f(-0.1u"°C", 0.0u"m", Val{:Tstar}(); θtot,θsat,θres,Tₘ,α,n)
+            Tstar = f(-0.1u"°C", 1.0, Val{:Tstar}(); θsat,θres,Tₘ,α,n)
             @test Tstar == res.Tstar
         end
     end
@@ -53,12 +53,12 @@ using Unitful
             n = 2.0,
             Tₘ = 0.0u"°C",
             θres = 0.0;
-            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,α,n), 0.0, atol=1e-3)
-            @test f(0.0u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ θtot
-            θw = f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,α,n), 0.0, atol=1e-3)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,α,n) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,α,n)
             @test θw > 0.0 && θw < θtot
             pkfc = PainterKarra(swrc=VanGenuchten(α=α, n=n))
-            @test f(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n) ≈ pkfc(-0.1u"°C"; θtot,θsat,θres,Tₘ,α,n)
+            @test f(-0.1u"°C"; θsat,θres,Tₘ,α,n) ≈ pkfc(-0.1u"°C"; θsat,θres,Tₘ,α,n)
         end
     end
     @testset "DallAmicoSalt freeze curve" begin
@@ -69,17 +69,17 @@ using Unitful
             Tₘ = 0.0u"°C",
             saltconc = 800.0u"mol/m^3",
             θres = 0.0;
-            @test isapprox(f(-10.0u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n), 0.0, atol=1e-3)
-            @test f(-0.1u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n) ≈ θtot
-            θw = f(-5.0u"°C"; θtot,θsat,θres,Tₘ,saltconc,α,n)
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,saltconc,α,n), 0.0, atol=1e-3)
+            @test f(-0.1u"°C"; θsat,θres,Tₘ,saltconc,α,n) ≈ θtot
+            θw = f(-5.0u"°C"; θsat,θres,Tₘ,saltconc,α,n)
             @test θw > 0.0 && θw < θtot
-            θw_nosalt = f(-5.0u"°C"; θtot,θsat,θres,Tₘ,saltconc=zero(saltconc),α,n)
+            θw_nosalt = f(-5.0u"°C"; θsat,θres,Tₘ,saltconc=zero(saltconc),α,n)
             @test θw > θw_nosalt
-            res = f(-0.1u"°C", 0.0u"m", Val{:all}(); θtot,θsat,θres,Tₘ,α,n)
+            res = f(-0.1u"°C", 1.0, Val{:all}(); θsat,θres,Tₘ,α,n)
             @test keys(res) == (:θw,:ψ,:Tstar)
-            ψ = f(-0.1u"°C", 0.0u"m", Val{:ψ}(); θtot,θsat,θres,Tₘ,α,n)
+            ψ = f(-0.1u"°C", 1.0, Val{:ψ}(); θsat,θres,Tₘ,α,n)
             @test ψ == res.ψ
-            Tstar = f(-0.1u"°C", 0.0u"m", Val{:Tstar}(); θtot,θsat,θres,Tₘ,α,n)
+            Tstar = f(-0.1u"°C", 1.0, Val{:Tstar}(); θsat,θres,Tₘ,α,n)
             @test Tstar == res.Tstar
         end
     end

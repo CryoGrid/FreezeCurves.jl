@@ -78,14 +78,14 @@ mkfc(-1.0u"°C", γ=1.0u"K")
 In cases where it is more convenient/appropriate to modify the default parameter values in the struct itself, it's worth noting that some parameters are nested one or two levels deep, e.g. setting the saturated water content (porosity) for a `DallAmico` freeze curve would look like:
 
 ```julia
-dafc = DallAmico(swrc=VanGenuchten(water=SoilWaterProperties(θsat=0.75)))
+dafc = DallAmico(swrc=VanGenuchten(water=SoilWaterVolume(θsat=0.75)))
 ```
 This is admittedly somewhat unwieldy, so `FreezeCurves` re-exports `@set!` from [Setfield.jl](https://github.com/jw3126/Setfield.jl) to make this a bit easier:
 
 ```julia
 dafc = DallAmico()
-@set! dafc.swrc.water.θsat = 0.75
-dafc.swrc.water.θsat
+@set! dafc.swrc.vol.θsat = 0.75
+dafc.swrc.vol.θsat
 # output
 0.75
 ```
