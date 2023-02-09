@@ -121,7 +121,7 @@ const param_name_map = Dict(
     θfrac_dispersion, θres_dispersion = priors.θfrac_dispersion, priors.θres_dispersion
     θsat, θtot, θres = @submodel swpmodel(SoilWaterVolume(fc); θfrac_dispersion, θres_dispersion)
     θ_pred = fc.(T; θsat, θtot, θres, Tₘ, pname => p)
-    # truncated normal likelihood with beta distributed noise
+    # truncated normal likelihood
     σ ~ priors.σ
     θ ~ arraydist(truncated.(Normal.(θ_pred,σ), 0, 1))
     return θ_pred
@@ -149,7 +149,7 @@ sfccpriors(::SFCCModel{<:DallAmico,IsoNormal}) = (
     θfrac_dispersion, θres_dispersion = priors.θfrac_dispersion, priors.θres_dispersion
     θsat, θtot, θres = @submodel swpmodel(SoilWaterVolume(fc); θfrac_dispersion, θres_dispersion)
     θ_pred = fc.(T; θsat, θtot, θres, Tₘ, α, n)
-    # truncated normal likelihood with beta distributed noise
+    # truncated normal likelihood
     σ ~ priors.σ
     θ ~ arraydist(truncated.(Normal.(θ_pred,σ), 0, 1))
     return θ_pred

@@ -23,7 +23,9 @@ m = sfcc_model(Trange, θtrue) # condition on data
 # draw 1,000 samples using the No U-Turn Sampler; gradients are computed automatically by Turing using forward-mode automatic differentiation (ForwardDiff.jl).
 chain = sample(rng, m, NUTS(), 1000)
 display(chain)
-# output
+```
+Output:
+```
 Chains MCMC chain (1000×18×1 Array{Float64, 3}):
 
 Iterations        = 501:1:1500
@@ -75,7 +77,9 @@ If you aren't interested in the full posterior distribution, Turing also provide
 using Optim
 
 optimize(m, MAP(), LBFGS())
-# output
+```
+Output:
+```
 ModeResult with maximized lp of 394.29
 6-element Named Vector{Float64}
 A      │ 
@@ -93,7 +97,9 @@ Alternatively, one can ignore the prior entirely and just get a *maximum likelih
 ```julia
 # here we use the common LBFGS optimizer; see Optim.jl docs for more options
 optimize(m, MLE(), LBFGS())
-# output
+```
+Output:
+```
 ModeResult with maximized lp of 394.29
 6-element Named Vector{Float64}
 A      │ 
