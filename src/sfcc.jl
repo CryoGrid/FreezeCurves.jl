@@ -105,7 +105,7 @@ end
     ω=f.ω,
     swrc_kwargs...
 ) where output
-    let θtot = sat*θsat,
+    let θtot = θres + (θsat-θres)*sat,
         ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         β = β,
@@ -140,7 +140,7 @@ function inflectionpoint(
     ω=f.ω,
     swrc_kwargs...
 )
-    let θtot = sat*θsat,
+    let θtot = θres + (θsat-θres)*sat,
         ψstar = inflectionpoint(f.swrc; swrc_kwargs...),
         ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
@@ -213,7 +213,7 @@ function (f::DallAmicoSalt)(
     saltconc=f.saltconc,
     swrc_kwargs...
 ) where output
-    let θtot = sat*θsat,
+    let θtot = θres + (θsat-θres)*sat,
         ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         R = f.R,
