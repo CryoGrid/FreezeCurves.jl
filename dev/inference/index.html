@@ -14,9 +14,7 @@ sfcc_model = SFCCModel(fc) # from FreezeCurves.Inference
 m = sfcc_model(Trange, θtrue) # condition on data
 # draw 1,000 samples using the No U-Turn Sampler; gradients are computed automatically by Turing using forward-mode automatic differentiation (ForwardDiff.jl).
 chain = sample(rng, m, NUTS(), 1000)
-display(chain)
-# output
-Chains MCMC chain (1000×18×1 Array{Float64, 3}):
+display(chain)</code></pre><p>Output:</p><pre><code class="nohighlight hljs">Chains MCMC chain (1000×18×1 Array{Float64, 3}):
 
 Iterations        = 501:1:1500
 Number of chains  = 1
@@ -48,9 +46,7 @@ Quantiles
         θres    0.0001    0.0014    0.0034    0.0060    0.0117
            σ    0.0167    0.0179    0.0186    0.0195    0.0214</code></pre><p>This implementation uses the log-transform of the van Genuchten parameters which, while not strictly necessary, has a few positive effects:</p><ol><li><p>It transforms the shape parameters, which have bounded support, into unconstrained space allowing for simple, unconstrained Gaussian priors.</p></li><li><p>It linearizes the otherwise non-linear relationship between α and n.</p></li><li><p>It smooths the partial derivatives of the objective function w.r.t the parameters which can improve the performance of gradient-based sampling and optimization methods (NUTS is a variant of Hamiltonian Monte Carlo which uses the gradient).</p></li></ol><p>We can manually obtain the mean estimates of original parameters as <code>α = mean(exp.(Array(group(chain, :logα)))) ≈ 0.103</code> and <code>n = mean(1 .+ exp.(Array(group(chain, :logn)))) ≈ 1.808</code>, which are quite close to the &quot;true&quot; values as expected.</p><p>Real measurement data can be used by simply replacing <code>Trange</code> and <code>θtrue</code> in this example with equal-length vectors of temperature and water content measurements. In cases where the isotropic Gaussian error assumption does not hold, the <code>SFCCModel</code> interface can be extended to use custom model implementations.</p><p>If you aren&#39;t interested in the full posterior distribution, Turing also provides a very convenient interface to get a <em>maximum a posteriori</em> (MAP) estimate (i.e. a mode of the posterior) using <a href="https://github.com/JuliaNLSolvers/Optim.jl">Optim.jl</a>:</p><pre><code class="language-julia hljs">using Optim
 
-optimize(m, MAP(), LBFGS())
-# output
-ModeResult with maximized lp of 394.29
+optimize(m, MAP(), LBFGS())</code></pre><p>Output:</p><pre><code class="nohighlight hljs">ModeResult with maximized lp of 394.29
 6-element Named Vector{Float64}
 A      │ 
 ───────┼────────────
@@ -60,9 +56,7 @@ A      │
 :θfrac │    0.490879
 :θres  │ 2.05868e-21
 :σ     │    0.018277</code></pre><p>Alternatively, one can ignore the prior entirely and just get a <em>maximum likelihood estimate</em>:</p><pre><code class="language-julia hljs"># here we use the common LBFGS optimizer; see Optim.jl docs for more options
-optimize(m, MLE(), LBFGS())
-# output
-ModeResult with maximized lp of 394.29
+optimize(m, MLE(), LBFGS())</code></pre><p>Output:</p><pre><code class="nohighlight hljs">ModeResult with maximized lp of 394.29
 6-element Named Vector{Float64}
 A      │ 
 ───────┼────────────
@@ -71,4 +65,4 @@ A      │
 :Tₘ    │ -0.00340876
 :θfrac │    0.490879
 :θres  │ 8.58955e-23
-:σ     │    0.018277</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/FreezeCurves/">FreezeCurves »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Wednesday 11 January 2023 16:06">Wednesday 11 January 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+:σ     │    0.018277</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/FreezeCurves/">FreezeCurves »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 10 February 2023 10:41">Friday 10 February 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
