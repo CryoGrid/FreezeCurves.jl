@@ -13,6 +13,8 @@ using Requires
 import Flatten
 import Unitful: ustrip
 
+export FreezeCurve
+
 function __init__()
     @require Turing="fce5fe82-541a-59a6-adf8-730c64b5f9a0" begin
         using .Turing
@@ -47,6 +49,8 @@ normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 include("math.jl")
+export FreeWater
+include("freewater.jl")
 export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten
 export inflectionpoint
 include("swrc.jl")
@@ -56,26 +60,6 @@ export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
 include("Solvers/Solvers.jl")
 using .Solvers
-
-# Free water freeze curve
-"""
-    FreeWater <: FreezeCurve
-
-"Free water" freeze curve in terms of enthalpy (H), total water content (θtot), and
-the latent heat of fusion of water (L).
-"""
-struct FreeWater <: FreezeCurve end
-function freewater(H, θtot, L)
-    θtot = max(1e-8, θtot)
-    Lθ = L*θtot
-    I_t = H > Lθ
-    I_f = H <= 0.0
-    I_c = (H > 0.0) && (H <= Lθ)
-    # compute liquid water content -> heat capacity -> temperature
-    θw = (I_c*(H/Lθ) + I_t)θtot
-    return (;θw, I_t, I_f, I_c, Lθ)
-end
-(freeW::FreeWater)(H, θtot, L) = freewater(H, θtot, L).θw
 
 # Extra utilities
 """
