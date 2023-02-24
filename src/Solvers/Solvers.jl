@@ -45,15 +45,15 @@ Base.@kwdef struct SFCCInverseEnthalpyObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH
     H::TH
     sat::Tsat = 1.0
 end
-@inline (obj::SFCCInverseEnthalpyObjective)(T) = first(FreezeCurves.temperature_residual(obj.f, obj.f_kwargs, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.sat)))
+@inline (obj::SFCCInverseEnthalpyObjective)(T) = first(FreezeCurves.temperature_residual(obj.f, obj.hc, obj.L, adstrip(obj.H), T, adstrip(obj.sat); obj.f_kwargs...))
 
 """
-    initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...)
+    initialize!(solver::SFCCSolver, fc::SFCC, hc; fc_kwargs...)
 
 Initializes `solver` (if necessary) for the freeze curve function `fc` with arguments `fc_kwargs` and heat capacity function `hc`.
 Default implementation does nothing.
 """
-initialize!(solver::SFCCSolver, fc::SFCCFunction, hc; fc_kwargs...) = nothing
+initialize!(solver::SFCCSolver, fc::SFCC, hc; fc_kwargs...) = nothing
 """
     sfccsolve(obj::AbstractSFCCObjective, solver::SFCCSolver, x₀, ::Val{return_all}=Val{true}()) where {return_all}
 
@@ -74,10 +74,11 @@ adstrip(x::Number) = x
 adstrip(x::ForwardDiff.Dual) = adstrip(ForwardDiff.value(x))
 adstrip(::Nothing) = nothing
 
-export heatcapacity
 include("heatcap.jl")
 export SFCCNewtonSolver
 include("newton.jl")
+export LUT, build_lut
+include("lut.jl")
 export SFCCPreSolver
 include("presolver.jl")
 end

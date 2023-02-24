@@ -1,16 +1,23 @@
+abstract type SaturationState{T} end
+struct MatricPotential{T} <: SaturationState{T}
+    value::T
+end
+struct Saturation{T} <: SaturationState{T}
+    value::T
+end
 """
-    SWRCFunction
+    SWRC
 
 Base type for soil water retention curves (SWRC) which relate soil water matric potential to water content.
 """
-abstract type SWRCFunction end
+abstract type SWRC end
 """
-    Base.inv(f::SWRCFunction)
+    Base.inv(f::SWRC)
 
 Returns a function `(args...) -> f(inv, args...)` which, when implemented, evaluates the inverse of the
 soil water retention curve.
 """
-Base.inv(f::SWRCFunction) = (args...; kwargs...) -> f(inv, args...; kwargs...)
+Base.inv(f::SWRC) = (args...; kwargs...) -> f(inv, args...; kwargs...)
 """
     SoilWaterVolume{Tρw,Tθres,Tθsat}
 
@@ -26,35 +33,35 @@ Base.@kwdef struct SoilWaterVolume{Tρw,Tθres,Tθsat}
     end
 end
 """
-    SoilWaterVolume(f::SWRCFunction)
+    SoilWaterVolume(f::SWRC)
 
-Get the `SoilWaterVolume` defined for the given `SWRCFunction` `f`. Must be implemented
-for all `SWRCFunction` types. Default implementation retrieves the field `water`.
+Get the `SoilWaterVolume` defined for the given `SWRC` `f`. Must be implemented
+for all `SWRC` types. Default implementation retrieves the field `water`.
 """
-SoilWaterVolume(f::SWRCFunction) = f.vol
+SoilWaterVolume(f::SWRC) = f.vol
 """
-    inflectionpoint(f::SWRCFunction)
+    inflectionpoint(f::SWRC)
 
 Returns the analytical solution for the inflection point (i.e. where ∂²θ/∂ψ² = 0) of the SWRC, if available.
 """
-inflectionpoint(f::SWRCFunction) = error("not implemented for $f")
+inflectionpoint(f::SWRC) = error("not implemented for $f")
 """
-    waterpotential(f::SWRCFunction, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwargs...)
+    waterpotential(f::SWRC, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwargs...)
 
 Returns the water potential at volumetric water content `θ` by evaluating the inverse of `f`.
 """
-function waterpotential(f::SWRCFunction, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwargs...)
+function waterpotential(f::SWRC, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwargs...)
     let θsat = max(θ, θsat);
         f(inv, θ; θsat, θres, kwargs...)
     end
 end
 """
-    VanGenuchten{Tvol,Tα,Tn} <: SWRCFunction
+    VanGenuchten{Tvol,Tα,Tn} <: SWRC
 
 van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.
     Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj 1980.03615995004400050002x.
 """
-Base.@kwdef struct VanGenuchten{Tvol,Tα,Tn} <: SWRCFunction
+Base.@kwdef struct VanGenuchten{Tvol,Tα,Tn} <: SWRC
     vol::Tvol = SoilWaterVolume()
     α::Tα = 1.0u"1/m" # domain: (0,Inf)
     n::Tn = 2.0 # domain: (1,Inf)
@@ -77,12 +84,12 @@ function (f::VanGenuchten)(
 end
 inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
 """
-    BrooksCorey{Twp,Tψₛ,Tλ} <: SWRCFunction
+    BrooksCorey{Twp,Tψₛ,Tλ} <: SWRC
 
 van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.
     Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj 1980.03615995004400050002x.
 """
-Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRCFunction
+Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRC
     vol::Tvol = SoilWaterVolume()
     ψₛ::Tψₛ = 0.01u"m"
     λ::Tλ = 0.2 # domain: (0,Inf)

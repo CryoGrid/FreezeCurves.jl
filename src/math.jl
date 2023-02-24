@@ -30,7 +30,7 @@ also be a `Number`, in which case a pseudo-point interpolant will be used
 must be accepted as keyword arguments.
 """
 function tabulate(f; kwargs...)
-    initknots(a::AbstractArray) = Interpolations.deduplicate_knots!(a)
+    initknots(a::AbstractArray) = length(a) > 1 ? Interpolations.deduplicate_knots!(a) : Interpolations.deduplicate_knots!(repeat(a,2))
     initknots(x::Number) = initknots([x,x])
     interp(::AbstractArray) = Gridded(Linear())
     interp(::Number) = Gridded(Constant())

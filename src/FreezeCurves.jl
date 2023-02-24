@@ -2,6 +2,7 @@ module FreezeCurves
 
 using ForwardDiff
 using IfElse
+using Interpolations
 using IntervalSets
 using RecipesBase
 using Reexport
@@ -11,8 +12,6 @@ using Requires
 
 import Flatten
 import Unitful: ustrip
-
-export SFCC
 
 function __init__()
     @require Turing="fce5fe82-541a-59a6-adf8-730c64b5f9a0" begin
@@ -48,10 +47,10 @@ normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 include("math.jl")
-export SWRCFunction, SoilWaterVolume, BrooksCorey, VanGenuchten
+export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten
 export inflectionpoint
 include("swrc.jl")
-export SFCCFunction, SFCCSolver, SoilFreezeThawProperties
+export SFCC, SFCCSolver, SoilFreezeThawProperties
 export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Hu2020, PowerLaw
 export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
@@ -78,27 +77,13 @@ function freewater(H, θtot, L)
 end
 (freeW::FreeWater)(H, θtot, L) = freewater(H, θtot, L).θw
 
-"""
-    SFCC{F,S} <: FreezeCurve
-
-Generic representation of the soil freezing characteristic curve along with a nonlinear `solver`
-for resolving the temperature-energy conservation law. The shape and parameters of the curve are
-determined by the implementation of SFCCFunction `f`.
-"""
-struct SFCC{F,S} <: FreezeCurve
-    f::F # freeze curve function f: (T,...) -> θ
-    solver::S # solver for H -> T or T -> H
-    SFCC(f::F, s::S=SFCCPreSolver()) where {F<:SFCCFunction,S<:SFCCSolver} = new{F,S}(f,s)
-end
-(sfcc::SFCC)(args...; kwargs...) = sfcc.f(args...; kwargs...)
-
 # Extra utilities
 """
     ustrip(x)
 
 Reconstructs the type or function `x` with all numerical quantities stripped of units.
 """
-ustrip(x::Union{SFCCFunction,SWRCFunction}) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
+ustrip(x::Union{SFCC,SWRC}) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
 
 include("plotting.jl")
 

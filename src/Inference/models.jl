@@ -113,7 +113,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     priors=(;),
 ) where {Tfc<:Union{McKenzie,Westermann}}
     priors = merge(sfccpriors(model), priors)
-    fc = model.sfcc.f
+    fc = model.sfcc
     pname = if Tfc <: McKenzie
         :γ
     else
@@ -142,7 +142,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     priors=(;),
 )
     priors = merge(sfccpriors(model), priors)
-    fc = model.sfcc.f
+    fc = model.sfcc
     b ~ priors.b
 	Tₘ ~ priors.Tₘ
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
@@ -167,7 +167,7 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     priors=(;),
 )
     priors = merge(sfccpriors(model), priors)
-    fc = model.sfcc.f
+    fc = model.sfcc
 	logα ~ priors.logα
 	logn ~ priors.logn
 	Tₘ ~ priors.Tₘ
@@ -196,7 +196,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     priors=(;),
 )
     priors = merge(sfccpriors(model), priors)
-    fc = model.sfcc.f
+    fc = model.sfcc
 	logα ~ priors.logα
 	logn ~ priors.logn
 	Tₘ ~ priors.Tₘ

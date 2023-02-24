@@ -38,7 +38,7 @@ import Pkg
 Pkg.add("FreezeCurves")
 ```
 
-All freezing characteristic curves are implemented as "callable" structs subtyping `SFCCFunction`. Callable structs are those with corresponding method definitions that allow them to be invoked like a function. As an example, we can initialize the freeze curve of McKenzie et al. (2007) with default parameter settings:
+All freezing characteristic curves are implemented as "callable" structs subtyping `SFCC`. Callable structs are those with corresponding method definitions that allow them to be invoked like a function. As an example, we can initialize the freeze curve of McKenzie et al. (2007) with default parameter settings:
 
 ```julia
 using FreezeCurves

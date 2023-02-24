@@ -15,18 +15,18 @@ abstract type SFCCLikelihood end
 abstract type TemperatureMeasurementModel end
 
 """
-    SFCCModel{Tfc<:SFCCFunction,Tlik,Tsp,Tsolver<:SFCCSolver}
+    SFCCModel{Tfc<:SFCC,Tlik,Tsp}
 
 Represents a statistical model for the soil freezing characteristic curve specified by `Tfc` with configuration `Tcfg`.
 """
-struct SFCCModel{Tfc<:SFCCFunction,Tlik<:SFCCLikelihood,Tmeas<:TemperatureMeasurementModel,Tsp,Tsolver<:SFCCSolver}
-    sfcc::SFCC{Tfc,Tsolver}
+struct SFCCModel{Tfc<:SFCC,Tlik<:SFCCLikelihood,Tmeas<:TemperatureMeasurementModel,Tsp}
+    sfcc::Tfc
     lik::Tlik
     meas::Tmeas
     sp::Tsp
-    function SFCCModel(fc::SFCCFunction, sp=nothing; likelihood=IsoNormalVWC(), meas=ExactTemperatures(), solver::SFCCSolver=SFCCNewtonSolver())
+    function SFCCModel(fc::SFCC, sp=nothing; likelihood=IsoNormalVWC(), meas=ExactTemperatures())
         fc = ustrip(fc)
-        return new{typeof(fc),typeof(likelihood),typeof(meas),typeof(sp),typeof(solver)}(SFCC(fc, solver), likelihood, meas, sp)
+        return new{typeof(fc),typeof(likelihood),typeof(meas),typeof(sp)}(fc, likelihood, meas, sp)
     end
 end
 """
