@@ -14,7 +14,7 @@ function (lut::LUT)(; coords...)
     return lut.interp(queries...)
 end
 @generated function free_coord_index(lut::LUT{N,T,coordnames}; kwqueries...) where {N,T,coordnames}
-    querynames(::Type{<:Base.Pairs{TK,TV,TT,<:NamedTuple{names}}}) where {TK,TV,TT,names} = names
+    querynames(::Type{<:Iterators.Pairs{TK,TV,TT,<:NamedTuple{names}}}) where {TK,TV,TT,names} = names
     i = findfirst(∉(querynames(kwqueries)), coordnames)
     return :($i)
 end
