@@ -128,7 +128,7 @@ function sfccsolve(
     @assert solver.cache.initialized "solver not yet initialized"
     θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f))
     H = @SVector[obj.H]
-    H_dual = ForwardDiff.dualize(typeof(obj), H)[1]
+    H_dual = dual(H, typeof(obj))[1]
     θw_dual = solver.cache.f_H(H_dual)
     C_dual = obj.hc(θw_dual, obj.sat*θsat, θsat)
     T_dual = (H_dual - obj.L*θw_dual) / C_dual
@@ -190,7 +190,7 @@ function sfccsolve(
     θtot = obj.sat*θsat
     L = obj.L
     H = @SVector[obj.H]
-    H_dual = ForwardDiff.dualize(typeof(obj), H)[1]
+    H_dual = dual(H, typeof(obj))[1]
     T_dual = IfElse.ifelse(
         obj.H > L*θtot,
         (H_dual - L*θtot) / obj.hc(θtot, θtot, θsat),

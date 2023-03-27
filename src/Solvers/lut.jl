@@ -79,6 +79,6 @@ function build_lut(f, coords::Pair{Symbol,<:Union{Number,AbstractVector}}...; f_
     lut_f(; kwcoords...) = f(; kwcoords..., f_kwargs...)
     # make sure every coordinate range is an array
     new_coords = map(kv -> first(kv) => vec(collect(last(kv))), coords)
-    interp = FreezeCurves.tabulate(lut_f; new_coords...)
+    interp = tabulate(lut_f; new_coords...)
     return LUT((; new_coords...), interp)
 end

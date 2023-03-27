@@ -48,7 +48,15 @@ Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherw
 normalize_temperature(x) = x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
-include("math.jl")
+"""
+    heaviside(x)
+
+Differentiable implementation of heaviside step function, i.e:
+
+``h(x) = \\begin{cases} 1 & x ≥ 0 \\\\ 0 & x < 0 \\end{cases}``
+"""
+heaviside(x) = IfElse.ifelse(x >= zero(x), 1.0, 0.0)
+
 export FreeWater
 include("freewater.jl")
 export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten

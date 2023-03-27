@@ -1,7 +1,6 @@
 module Solvers
 
 using ..FreezeCurves
-using ..FreezeCurves: ∇
 
 using ForwardDiff
 using IfElse
@@ -74,6 +73,7 @@ adstrip(x::Number) = x
 adstrip(x::ForwardDiff.Dual) = adstrip(ForwardDiff.value(x))
 adstrip(::Nothing) = nothing
 
+include("math.jl")
 include("heatcap.jl")
 export SFCCNewtonSolver
 include("newton.jl")
