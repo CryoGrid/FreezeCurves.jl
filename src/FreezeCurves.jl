@@ -7,6 +7,7 @@ using IntervalSets
 using RecipesBase
 using Reexport
 using Requires
+using StaticArrays
 @reexport using Setfield: @set, @set!
 @reexport using Unitful
 
@@ -57,6 +58,7 @@ Differentiable implementation of heaviside step function, i.e:
 """
 heaviside(x) = IfElse.ifelse(x >= zero(x), 1.0, 0.0)
 
+include("math.jl")
 export FreeWater
 include("freewater.jl")
 export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten

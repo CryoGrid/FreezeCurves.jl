@@ -12,7 +12,7 @@ function freewater(H, θtot, L)
     I_t = H > Lθ
     I_f = H <= 0.0
     I_c = (H > 0.0) && (H <= Lθ)
-    # compute liquid water content -> heat capacity -> temperature
+    # compute liquid water content as a function of enthalpy
     θw = (I_c*(H/Lθ) + I_t)θtot
     return (;θw, I_t, I_f, I_c, Lθ)
 end

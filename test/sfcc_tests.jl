@@ -63,7 +63,7 @@ using Unitful
             θw = f(-0.1u"°C"; θsat,θres,Tₘ,α,n)
             @test θw > 0.0 && θw < θtot
             res = f(-0.1u"°C", 1.0, Val{:all}(); θsat,θres,Tₘ,α,n)
-            @test keys(res) == (:θw,:ψ,:Tstar)
+            @test keys(res) == (:θw, :ψ, :∂θw∂ψ, :Tstar)
             ψ = f(-0.1u"°C", 1.0, Val{:ψ}(); θsat,θres,Tₘ,α,n)
             @test ψ == res.ψ
             Tstar = f(-0.1u"°C", 1.0, Val{:Tstar}(); θsat,θres,Tₘ,α,n)
@@ -100,7 +100,7 @@ using Unitful
             θw_nosalt = f(-5.0u"°C"; θsat,θres,Tₘ,saltconc=zero(saltconc),α,n)
             @test θw > θw_nosalt
             res = f(-0.1u"°C", 1.0, Val{:all}(); θsat,θres,Tₘ,α,n)
-            @test keys(res) == (:θw,:ψ,:Tstar)
+            @test keys(res) == (:θw, :ψ, :Tstar)
             ψ = f(-0.1u"°C", 1.0, Val{:ψ}(); θsat,θres,Tₘ,α,n)
             @test ψ == res.ψ
             Tstar = f(-0.1u"°C", 1.0, Val{:Tstar}(); θsat,θres,Tₘ,α,n)

@@ -117,10 +117,14 @@ end
         # matric potential as a function of T (same as Dall'Amico but with β parameter)
         ψ = ψ₀ + β*Lsl/(g*Tstar)*(T-Tstar)*heaviside(Tstar-T)
         # output is a compile-time constant so will be compiled away
-        if output == :all || output == true # allow 'true' for backwards compatibility w/ 0.4
-            θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
-            return (; θw, ψ, Tstar)
-        elseif output == :θw || output == false # allow 'false' for backwards compatibility w/ 0.4
+        if output == :all
+            # here we evaluate the water retention curve along with the gradient; this is useful
+            # for downstream applications in the implementation of Richards equation.
+            swrc = ustrip(f.swrc)
+            swrc_kwargs_nt = (;swrc_kwargs...)
+            θw, ∂θw∂ψ = ∇(ψ -> swrc(ψ; θsat, θres, map(ustrip, swrc_kwargs_nt)...), ustrip(ψ))
+            return (; θw, ψ, ∂θw∂ψ, Tstar)
+        elseif output == :θw
             θw = f.swrc(ψ; θsat, θres, swrc_kwargs...)
             return θw
         elseif output == :ψ
