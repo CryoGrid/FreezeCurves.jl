@@ -2,6 +2,6 @@
 
 ```@autodocs
 Modules = [FreezeCurves]
-Private = false
+Private = true
 Order = [:type, :function, :macro]
 ```

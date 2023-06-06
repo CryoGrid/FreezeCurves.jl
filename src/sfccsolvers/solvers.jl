@@ -14,6 +14,7 @@ export sfccsolve, SFCCInverseEnthalpyObjective
 Base type for non-linear SFCC optimization objectives.
 """
 abstract type AbstractSFCCObjective end
+
 """
     SFCCInverseEnthalpyObjective{TF,Tkwargs<:NamedTuple,Thc,TL,TH,Tsat} <: AbstractSFCCObjective
 
@@ -40,6 +41,7 @@ Initializes `solver` (if necessary) for the freeze curve function `fc` with argu
 Default implementation does nothing.
 """
 initialize!(solver::SFCCSolver, fc::SFCC, hc; fc_kwargs...) = nothing
+
 """
     sfccsolve(obj::AbstractSFCCObjective, solver::SFCCSolver, x₀, ::Val{return_all}=Val{true}()) where {return_all}
 

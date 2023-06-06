@@ -65,17 +65,20 @@ Differentiable implementation of heaviside step function, i.e:
 heaviside(x) = IfElse.ifelse(x >= zero(x), 1.0, 0.0)
 
 include("math.jl")
+
 export FreeWater
 include("freewater.jl")
+
 export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten
 export inflectionpoint
 include("swrc.jl")
+
 export SFCC, SFCCSolver, SoilFreezeThawProperties
 export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Hu2020, PowerLaw
 export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
+
 include("sfccsolvers/solvers.jl")
-using .Solvers
 
 # Extra utilities
 """
