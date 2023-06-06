@@ -21,6 +21,12 @@ function __init__()
         using .Turing
         include("Inference/Inference.jl")
     end
+    # require NonlinearSolve.jl for generic nonlinear solver
+    @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin
+        using .NonlinearSolve
+        export SFCCNonlinearSolver
+        include("sfccsolvers/nonlinearsolve.jl")
+    end
 end
 
 # convenience constants for temperature unit/quantity types
@@ -68,7 +74,7 @@ export SFCC, SFCCSolver, SoilFreezeThawProperties
 export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Hu2020, PowerLaw
 export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
-include("Solvers/Solvers.jl")
+include("sfccsolvers/solvers.jl")
 using .Solvers
 
 # Extra utilities

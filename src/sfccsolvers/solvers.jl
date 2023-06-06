@@ -1,7 +1,3 @@
-module Solvers
-
-using ..FreezeCurves
-
 using ForwardDiff
 using IfElse
 using Interpolations
@@ -11,15 +7,6 @@ using Requires
 using Unitful
 
 export sfccsolve, SFCCInverseEnthalpyObjective
-
-function __init__()
-    # require NonlinearSolve.jl for generic nonlinear solver
-    @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin
-        using .NonlinearSolve
-        export SFCCNonlinearSolver
-        include("nonlinearsolve.jl")
-    end
-end
 
 """
     AbstractSFCCObjective
@@ -73,7 +60,6 @@ adstrip(x::Number) = x
 adstrip(x::ForwardDiff.Dual) = adstrip(ForwardDiff.value(x))
 adstrip(::Nothing) = nothing
 
-include("../math.jl")
 include("heatcap.jl")
 export SFCCNewtonSolver
 include("newton.jl")
@@ -81,4 +67,3 @@ export LUT, build_lut
 include("lut.jl")
 export SFCCPreSolver
 include("presolver.jl")
-end

@@ -5,7 +5,6 @@ IS_LOCAL = haskey(ENV,"LOCALDOCS") && ENV["LOCALDOCS"] == "true"
 
 const modules = [
     FreezeCurves,
-    FreezeCurves.Solvers,
 ]
 
 makedocs(modules=modules,
@@ -16,7 +15,6 @@ makedocs(modules=modules,
                 "Inference" => "inference.md",
                 "API reference" => [
                        "FreezeCurves" => "api/FreezeCurves.md",
-                       "Solvers" => "api/Solvers.md",
                 ],
                 "Contributing" => "contributing.md",
 ])
