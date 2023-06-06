@@ -1,7 +1,6 @@
 module Inference
 
 using ..FreezeCurves
-using ..FreezeCurves.Solvers
 
 using ..Turing
 using ..Turing.Distributions
