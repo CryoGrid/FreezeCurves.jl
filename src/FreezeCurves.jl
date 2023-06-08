@@ -74,7 +74,7 @@ export inflectionpoint
 include("swrc.jl")
 
 export SFCC, SFCCSolver, SoilFreezeThawProperties
-export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Hu2020, PowerLaw
+export PainterKarra, DallAmico, DallAmicoSalt, McKenzie, Westermann, Langer, Hu2020, PowerLaw
 export SUTRAIce_Exp, SUTRAIce_Power
 include("sfcc.jl")
 

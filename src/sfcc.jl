@@ -82,6 +82,7 @@ which computes the heat capacity from the unfrozen, total, and maximum (saturate
     Tres = T - (H - θw*L) / C
     return Tres, θw, C
 end
+
 """
     PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRC} <: SFCC
 
@@ -156,6 +157,7 @@ function inflectionpoint(
         return (ψstar - ψ₀)/(β*Lsl)*(g*Tstar) + Tstar
     end
 end
+
 """
     DallAmico{TFT,Tg,Tswrc<:SWRC} <: SFCC
 
@@ -191,6 +193,7 @@ function inflectionpoint(
 )
     return inflectionpoint(PainterKarra(), sat; θsat, θres, Tₘ, swrc_kwargs...)
 end
+
 """
     DallAmicoSalt{TFT,Tsc,TR,Tg,Tswrc<:SWRC} <: SFCC
 
@@ -248,6 +251,11 @@ end
 # method dispatches for SWRC-based freeze curves
 swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
 SoilWaterVolume(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterVolume(swrc(f))
+
+##################################
+### Empirical curves (no SWRC) ###
+##################################
+
 """
     McKenzie{TFT,Tvol,Tγ} <: SFCC
 
@@ -271,9 +279,10 @@ function (f::McKenzie)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot*one(T/Tₘ))
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot)
     end
 end
+
 """
     Westermann{TFT,Tvol,Tδ} <: SFCC
 
@@ -297,7 +306,37 @@ function (f::Westermann)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot*one(T/Tₘ))
+        return IfElse.ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot)
+    end
+end
+
+"""
+    Langer{TFT,Tvol,Ta,Tb} <: SFCC
+    
+Langer, M., Westermann, S., Muster, S., Piel, K., & Boike, J. (2011). The surface energy balance of
+    a polygonal tundra site in northern Siberia – Part 2: Winter. The Cryosphere, 5(2), 509–524.
+    https://doi.org/10.5194/tc-5-509-2011
+"""
+Base.@kwdef struct Langer{TFT,Tvol,Ta,Tb} <: SFCC
+    freezethaw::TFT = SoilFreezeThawProperties()
+    vol::Tvol = SoilWaterVolume()
+    a::Ta = 19.0
+    b::Tb = 4.0
+end
+function (f::Langer)(
+    T,
+    sat=1.0;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
+    Tₘ=f.freezethaw.Tₘ,
+    a=f.a,
+    b=f.b,
+)
+    let Tₘ = normalize_temperature(Tₘ),
+        # convert to dimensionless °C
+        T = (normalize_temperature(T) - Tₘ) / oneunit(Tₘ),
+        θtot = sat*θsat;
+        return IfElse.ifelse(T <= Tₘ / oneunit(Tₘ), θres + (θtot-θres)*(1 - a*T + b*T^2)^-1, θtot)
     end
 end
 
@@ -324,7 +363,7 @@ function (f::Hu2020)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot*one(T/Tₘ))
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot)
     end
 end
 
@@ -351,7 +390,7 @@ function (f::PowerLaw)(
     let T = ustrip(normalize_temperature(T)),
         Tₘ = ustrip(normalize_temperature(-α^(1/β))),
         θtot = sat*θsat;
-        return IfElse.ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot*one(T/Tₘ))
+        return IfElse.ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot)
     end
 end
 

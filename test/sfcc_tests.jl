@@ -27,6 +27,19 @@ using Unitful
             @test θw > 0.0 && θw < θtot
         end
     end
+    @testset "Langer freeze curve" begin
+        f = Langer()
+        let θtot = θsat = 0.8,
+            a = 20.0,
+            b = 5.0,
+            θres = 0.0,
+            Tₘ = 0.0u"°C";
+            @test isapprox(f(-10.0u"°C"; θsat,θres,Tₘ,a,b), 0.0, atol=1e-2)
+            @test f(0.0u"°C"; θsat,θres,Tₘ,a,b) ≈ θtot
+            θw = f(-0.1u"°C"; θsat,θres,Tₘ,a,b)
+            @test θw > 0.0 && θw < θtot
+        end
+    end
     @testset "Hu2020 freeze curve" begin
         f = Hu2020()
         let θtot = θsat = 0.8,
