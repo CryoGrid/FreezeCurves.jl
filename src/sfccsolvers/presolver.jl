@@ -151,7 +151,7 @@ any error control so there approximation error is not guaranteed.
 mutable struct SFCCPreSolverCacheND{N,TF} <: AbstractPreSolverCache
     lut::TF # T(H) interpolant
     initialized::Bool
-    function SFCCPreSolverCacheND(; H=-1e8:1e5:3.34e8, sat=0.01:0.01:1.0, θsat=[0.0,1.0], other_coords...)
+    function SFCCPreSolverCacheND(; H=-1e8:1e5:3.34e8, sat=0.00:0.01:1.0, θsat=0.1:0.1:1.0, other_coords...)
         dummy_f(; kwargs...) = NaN
         lut = build_lut(dummy_f, :H => H, :sat => sat, :θsat => θsat, other_coords...)
         N = length(lut.coords)

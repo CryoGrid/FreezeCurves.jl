@@ -279,7 +279,7 @@ function (f::McKenzie)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot)
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot*one(T))
     end
 end
 
@@ -306,7 +306,7 @@ function (f::Westermann)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot)
+        return IfElse.ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot*one(T))
     end
 end
 
@@ -336,7 +336,7 @@ function (f::Langer)(
         # convert to dimensionless °C
         T = (normalize_temperature(T) - Tₘ) / oneunit(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ / oneunit(Tₘ), θres + (θtot-θres)*(1 - a*T + b*T^2)^-1, θtot)
+        return IfElse.ifelse(T <= Tₘ / oneunit(Tₘ), θres + (θtot-θres)*(1 - a*T + b*T^2)^-1, θtot*one(T))
     end
 end
 
@@ -363,7 +363,7 @@ function (f::Hu2020)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot)
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot*one(T))
     end
 end
 
@@ -390,7 +390,7 @@ function (f::PowerLaw)(
     let T = ustrip(normalize_temperature(T)),
         Tₘ = ustrip(normalize_temperature(-α^(1/β))),
         θtot = sat*θsat;
-        return IfElse.ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot)
+        return IfElse.ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot*one(T))
     end
 end
 

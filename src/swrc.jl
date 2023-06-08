@@ -68,18 +68,19 @@ Base.@kwdef struct VanGenuchten{Tvol,Tα,Tn} <: SWRC
 end
 function (f::VanGenuchten)(ψ; θsat=f.vol.θsat, θres=f.vol.θres, α=f.α, n=f.n)
     let m = 1-1/n;
-        IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*(1 + (-α*ψ)^n)^(-m), θsat)
+        IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*(1 + (-α*ψ)^n)^(-m), θsat*one(ψ))
     end
 end
 function (f::VanGenuchten)(
-    ::typeof(inv), θ;
+    ::typeof(inv),
+    θ;
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     α=f.α,
     n=f.n
 )
     let m = 1-1/n;
-        IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α))
+        IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
     end
 end
 inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
@@ -101,15 +102,16 @@ function (f::BrooksCorey)(
     ψₛ=f.ψₛ,
     λ=f.λ
 )
-    IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat)
+    IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat*one(ψ))
 end
 function (f::BrooksCorey)(
-    ::typeof(inv), θ;
+    ::typeof(inv),
+    θ;
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     ψₛ=f.ψₛ,
     λ=f.λ,
 )
-    IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ)
+    IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ*one(θ))
 end
 inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
