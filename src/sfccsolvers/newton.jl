@@ -9,7 +9,7 @@ discontinuities and strong non-linearity in most common soil freeze curves.
 """
 Base.@kwdef struct SFCCNewtonSolver <: SFCCSolver
     maxiter::Int = 100 # maximum number of iterations
-    abstol::Float64 = 1e-2 # absolute tolerance for convergence
+    abstol::Float64 = 1e-3 # absolute tolerance for convergence
     reltol::Float64 = 1e-4 # relative tolerance for convergence
     α₀::Float64 = 1.0 # initial step size multiplier
     τ::Float64 = 0.7 # step size decay for backtracking
