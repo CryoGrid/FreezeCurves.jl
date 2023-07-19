@@ -6,14 +6,25 @@
 the latent heat of fusion of water (L).
 """
 struct FreeWater <: FreezeCurve end
-function freewater(H, θtot, L)
-    θtot = max(1e-8, θtot)
+
+# for backwards compatibility
+freewater(H, θtot, L) = freewater(H; θtot, L)
+function freewater(H; θtot=0.5, θres=0.0, L=3.34e8)
+    θtot = max(1e-8, θtot - θres)
     Lθ = L*θtot
-    I_t = H > Lθ
-    I_f = H <= 0.0
-    I_c = (H > 0.0) && (H <= Lθ)
-    # compute liquid water content as a function of enthalpy
-    θw = (I_c*(H/Lθ) + I_t)θtot
-    return (;θw, I_t, I_f, I_c, Lθ)
+    θw = IfElse.ifelse(
+        H < zero(θtot),
+        # Case 1: H < 0 -> frozen
+        θres,
+        # Case 2: H >= 0
+        IfElse.ifelse(
+            H >= Lθ,
+            # Case 2a: H >= Lθ -> thawed
+            θtot,
+            # Case 2b: 0 <= H < Lθ -> phase change
+            θres + H / Lθ
+        )
+    )
+    return (;θw, Lθ)
 end
-(freeW::FreeWater)(H, θtot, L) = freewater(H, θtot, L).θw
+(freeW::FreeWater)(H; θtot, θres=0.0, L=3.34e8) = freewater(H; θtot, θres, L).θw
