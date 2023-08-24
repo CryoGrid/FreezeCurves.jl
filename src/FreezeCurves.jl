@@ -18,8 +18,9 @@ export FreezeCurve
 
 function __init__()
     @require Turing="fce5fe82-541a-59a6-adf8-730c64b5f9a0" begin
-        using .Turing
-        include("Inference/Inference.jl")
+        using .Turing, .Turing.Distributions
+        export SFCCModel, sfccpriors
+        include("inference/inference.jl")
     end
     # require NonlinearSolve.jl for generic nonlinear solver
     @require NonlinearSolve="8913a72c-1f9b-4ce2-8d82-65094dcecaec" begin

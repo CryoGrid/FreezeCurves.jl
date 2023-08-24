@@ -1,12 +1,3 @@
-module Inference
-
-using ..FreezeCurves
-
-using ..Turing
-using ..Turing.Distributions
-
-export SFCCModel, sfccpriors
-
 betaprior(mean, dispersion) = Beta(max(mean*dispersion,1), max((1-mean)*dispersion,1))
 
 abstract type SFCCLikelihood end
@@ -71,5 +62,3 @@ match the model or submodel variables.
 function sfccpriors end
 
 include("models.jl")
-
-end
