@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Inference · FreezeCurves.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">FreezeCurves.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Inference</a><ul class="internal"><li><a class="tocitem" href="#Estimating-freeze-curve-parameters"><span>Estimating freeze curve parameters</span></a></li></ul></li><li><span class="tocitem">API reference</span><ul><li><a class="tocitem" href="../api/FreezeCurves/">FreezeCurves</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Inference</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Inference</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/CryoGrid/FreezeCurves.jl/blob/main/docs/src/inference.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Estimating-freeze-curve-parameters"><a class="docs-heading-anchor" href="#Estimating-freeze-curve-parameters">Estimating freeze curve parameters</a><a id="Estimating-freeze-curve-parameters-1"></a><a class="docs-heading-anchor-permalink" href="#Estimating-freeze-curve-parameters" title="Permalink"></a></h2><p>Most soil freezing characteristic curves have one or more parameters which determine the shape of the curve. These parameters are typically determined empirically and can vary considerably between different types of soil.</p><p>FreezeCurves.jl facilitates inference of these parameters via the <a href="https://turing.ml">Turing.jl</a> probabilistic programming language. In order to keep FreezeCurves.jl as lightweight as possible, <code>Turing</code> is not included as a dependncy by default. It must be installed separately (<code>Pkg.add(&quot;Turing&quot;)</code>) to expose the <code>FreezeCurves.Inference</code> module.</p><p>We can demonstrate this with an idealized test case where simply corrupt the &quot;true&quot; liquid water content values with isotropic Gaussian noise. Here we fit the van Genuchten parameters for the Dall&#39;Amico (2011) freezing characteristic curve using the Bayesian probabilistic freeze curve model pre-sepcified in the <code>Inference</code> module. This model assumes that the measurement errors are normally distributed, which matches our idealized test case.</p><pre><code class="language-julia hljs">using Turing
+using FreezeCurves
+using FreezeCurves.Inference
+
+import Random
+
+rng = Random.MersenneTwister(1234)
+
+fc = DallAmico(swrc=VanGenuchten(α=0.1u&quot;1/m&quot;, n=1.8))
+Trange = vcat(-5.0u&quot;°C&quot;:0.1u&quot;K&quot;:-0.11u&quot;°C&quot;, -0.1u&quot;°C&quot;:0.001u&quot;K&quot;:0.0u&quot;°C&quot;)
+θtrue = min.(0.5, max.(fc.(Trange) .+ randn(length(Trange)).*0.02, 0.0))
+sfcc_model = SFCCModel(fc) # from FreezeCurves.Inference
+m = sfcc_model(Trange, θtrue) # condition on data
+# draw 1,000 samples using the No U-Turn Sampler w/ 500 adaptation steps and 85% target acceptance rate; gradients are computed automatically by Turing using forward-mode automatic differentiation (ForwardDiff.jl).
+chain = sample(rng, m, NUTS(500,0.85), 1_000)
+display(chain)</code></pre><p>Output:</p><pre><code class="nohighlight hljs">Chains MCMC chain (1000×19×1 Array{Float64, 3}):
+
+Iterations        = 501:1:1500
+Number of chains  = 1
+Samples per chain = 1000
+Wall duration     = 10.09 seconds
+Compute duration  = 10.09 seconds
+parameters        = logα, logn, Tₘ, sat, por, res, σ
+internals         = lp, n_steps, is_accept, acceptance_rate, log_density, hamiltonian_energy, hamiltonian_energy_error, max_hamiltonian_energy_error, tree_depth, numerical_error, step_size, nom_step_size
+
+Summary Statistics
+  parameters      mean       std   naive_se      mcse        ess      rhat   ess_per_sec 
+      Symbol   Float64   Float64    Float64   Float64    Float64   Float64       Float64 
+
+        logα   -2.2574    0.0575     0.0018    0.0033   381.2072    1.0010       37.7732
+        logn   -0.2221    0.0494     0.0016    0.0026   456.1224    0.9990       45.1964
+          Tₘ   -0.0034    0.0027     0.0001    0.0001   371.9088    0.9994       36.8518
+         sat    0.9889    0.0101     0.0003    0.0004   437.2432    1.0006       43.3257
+         por    0.4949    0.0052     0.0002    0.0002   368.9660    1.0042       36.5602
+         res    0.0074    0.0063     0.0002    0.0002   631.1171    1.0044       62.5364
+           σ    0.0193    0.0012     0.0000    0.0000   787.7707    0.9992       78.0589
+
+Quantiles
+  parameters      2.5%     25.0%     50.0%     75.0%     97.5% 
+      Symbol   Float64   Float64   Float64   Float64   Float64 
+
+        logα   -2.3575   -2.2960   -2.2622   -2.2221   -2.1284
+        logn   -0.3147   -0.2585   -0.2219   -0.1887   -0.1282
+          Tₘ   -0.0100   -0.0050   -0.0028   -0.0012   -0.0001
+         sat    0.9621    0.9848    0.9919    0.9962    0.9997
+         por    0.4851    0.4915    0.4947    0.4980    0.5053
+         res    0.0002    0.0025    0.0058    0.0107    0.0238
+           σ    0.0171    0.0184    0.0192    0.0200    0.0218</code></pre><p>This implementation uses the log-transform of the van Genuchten parameters which, while not strictly necessary, has a few positive effects:</p><ol><li><p>It transforms the shape parameters, which have bounded support, into unconstrained space allowing for simple, unconstrained Gaussian priors.</p></li><li><p>It linearizes the otherwise non-linear relationship between α and n.</p></li><li><p>It smooths the partial derivatives of the objective function w.r.t the parameters which can improve the performance of gradient-based sampling and optimization methods (NUTS is a variant of Hamiltonian Monte Carlo which uses the gradient).</p></li></ol><p>We can manually obtain the mean estimates of original parameters as <code>α = mean(exp.(Array(group(chain, :logα)))) ≈ 0.105</code> and <code>n = mean(1 .+ exp.(Array(group(chain, :logn)))) ≈ 1.802</code>, which are quite close to the &quot;true&quot; values as expected.</p><p>Real measurement data can be used by simply replacing <code>Trange</code> and <code>θtrue</code> in this example with equal-length vectors of temperature and water content measurements. In cases where the isotropic Gaussian error assumption does not hold, the <code>SFCCModel</code> interface can be extended to use custom model implementations.</p><p>If you aren&#39;t interested in the full posterior distribution, Turing also provides a very convenient interface to get a <em>maximum a posteriori</em> (MAP) estimate (i.e. a mode of the posterior) using <a href="https://github.com/JuliaNLSolvers/Optim.jl">Optim.jl</a>:</p><pre><code class="language-julia hljs">using Optim
+
+optimize(m, MAP(), LBFGS())</code></pre><p>Output:</p><pre><code class="nohighlight hljs">ModeResult with maximized lp of 394.16
+7-element Named Vector{Float64}
+A     │ 
+──────┼─────────────
+:logα │      -2.3055
+:logn │    -0.228226
+:Tₘ   │ -1.45969e-52
+:sat  │          1.0
+:por  │     0.496235
+:res  │  4.83361e-31
+:σ    │     0.018805</code></pre><p>Alternatively, one can ignore the prior entirely and just get a <em>maximum likelihood estimate</em>:</p><pre><code class="language-julia hljs"># here we use the common LBFGS optimizer; see Optim.jl docs for more options
+optimize(m, MLE(), LBFGS())</code></pre><p>Output:</p><pre><code class="nohighlight hljs">ModeResult with maximized lp of 394.16
+7-element Named Vector{Float64}
+A     │ 
+──────┼─────────────
+:logα │      -2.3055
+:logn │    -0.228226
+:Tₘ   │ -6.85422e-72
+:sat  │          1.0
+:por  │     0.496235
+:res  │  4.64697e-43
+:σ    │     0.018805</code></pre><p>Note how the MLE vs MAP results are almost identical in this case since we have a (relatively) large generated dataset and the default priors are only very weakly informative.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/FreezeCurves/">FreezeCurves »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Wednesday 30 August 2023 19:58">Wednesday 30 August 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
