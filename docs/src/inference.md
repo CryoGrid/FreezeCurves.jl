@@ -2,14 +2,13 @@
 
 Most soil freezing characteristic curves have one or more parameters which determine the shape of the curve. These parameters are typically determined empirically and can vary considerably between different types of soil.
 
-FreezeCurves.jl facilitates inference of these parameters via the [Turing.jl](https://turing.ml) probabilistic programming language. In order to keep FreezeCurves.jl as lightweight as possible, `Turing` is not included as a dependncy by default. It must be installed separately (`Pkg.add("Turing")`) to expose the `FreezeCurves.Inference` module.
+FreezeCurves.jl facilitates inference of these parameters via the [Turing.jl](https://turing.ml) probabilistic programming language. In order to keep FreezeCurves.jl as lightweight as possible, `Turing` is not included as a dependncy by default. It must be installed separately (`Pkg.add("Turing")`) for this functionality to be enabled.
 
-We can demonstrate this with an idealized test case where simply corrupt the "true" liquid water content values with isotropic Gaussian noise. Here we fit the van Genuchten parameters for the Dall'Amico (2011) freezing characteristic curve using the Bayesian probabilistic freeze curve model pre-sepcified in the `Inference` module. This model assumes that the measurement errors are normally distributed, which matches our idealized test case.
+We can demonstrate this with an idealized test case where simply corrupt the "true" liquid water content values with isotropic Gaussian noise. Here we fit the van Genuchten parameters for the Dall'Amico (2011) freezing characteristic curve using the Bayesian probabilistic freeze curve model pre-sepcified in `FreezeCurves`. This model assumes that the measurement errors are normally distributed, which matches our idealized test case.
 
 ```julia
 using Turing
 using FreezeCurves
-using FreezeCurves.Inference
 
 import Random
 
@@ -18,7 +17,7 @@ rng = Random.MersenneTwister(1234)
 fc = DallAmico(swrc=VanGenuchten(α=0.1u"1/m", n=1.8))
 Trange = vcat(-5.0u"°C":0.1u"K":-0.11u"°C", -0.1u"°C":0.001u"K":0.0u"°C")
 θtrue = min.(0.5, max.(fc.(Trange) .+ randn(length(Trange)).*0.02, 0.0))
-sfcc_model = SFCCModel(fc) # from FreezeCurves.Inference
+sfcc_model = SFCCModel(fc)
 m = sfcc_model(Trange, θtrue) # condition on data
 # draw 1,000 samples using the No U-Turn Sampler w/ 500 adaptation steps and 85% target acceptance rate; gradients are computed automatically by Turing using forward-mode automatic differentiation (ForwardDiff.jl).
 chain = sample(rng, m, NUTS(500,0.85), 1_000)
