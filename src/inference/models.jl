@@ -68,7 +68,7 @@ sfccpriors(vol::SoilWaterVolume; sat_mean=1.0, sat_dispersion=10.0, por_dispersi
 Probabilistic model of the porous water volume. Considers saturation `sat`, porosity `por`, and the residual fraction `res`
 as random variables, returning `sat`, `θsat = por`, and `θres = res*por` as generated quantities.
 """
-@model function swvmodel(::SoilWaterVolume, priors)
+@model function swvmodel(vol::SoilWaterVolume, priors)
     sat ~ priors.sat
     por ~ priors.por
     res ~ priors.res
@@ -88,21 +88,24 @@ sfccmodel(model::SFCCModel, T::AbstractVector, priors, args...; kwargs...) = err
 
 sfccpriors(m::SFCCModel{<:Westermann}) = (
     logδ = Normal(0,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 sfccpriors(m::SFCCModel{<:McKenzie}) = (
     logγ = Normal(0,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Normal(0,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 @model function sfccmodel(
     model::SFCCModel{Tfc},
@@ -117,19 +120,21 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
         :δ
     end
     logp ~ NamedDist(dist, pname)
+	Tₘ ~ priors.Tₘ
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, pname => p)
+    θ_pred = fc.(T, sat; θsat, θres, Tₘ, pname => p)
     @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
     return θ_pred
 end
 
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Beta(1,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:Hu2020},
@@ -139,9 +144,11 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     priors = merge(sfccpriors(model), priors)
     fc = model.sfcc
     b ~ priors.b
+	Tₘ ~ priors.Tₘ
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
+    p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, b)
+    θ_pred = fc.(T, sat; θsat, θres, Tₘ, b)
     @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
     return θ_pred
 end
@@ -149,9 +156,10 @@ end
 sfccpriors(m::SFCCModel{<:DallAmico}) = (
     logα = Normal(0,2),
     logn = Normal(0,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:DallAmico},
@@ -162,38 +170,12 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     fc = model.sfcc
 	logα ~ priors.logα
 	logn ~ priors.logn
+	Tₘ ~ priors.Tₘ
     α = exp(logα)
     n = 1 + exp(logn)
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, α, n)
-    @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
-    return θ_pred
-end
-
-sfccpriors(m::SFCCModel{<:DallAmicoSalt}) = (
-    logα = Normal(0,2),
-    logn = Normal(0,2),
-    saltconc = Exponential(200.0),
-    lik = sfccpriors(m.lik),
-    meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
-)
-@model function sfccmodel(
-    model::SFCCModel{<:DallAmicoSalt},
-    T_obs::AbstractVector,
-    priors=(;),
-)
-    priors = merge(sfccpriors(model), priors)
-    fc = model.sfcc
-	logα ~ priors.logα
-	logn ~ priors.logn
-    saltconc ~ prior.saltconc
-    α = exp(logα)
-    n = 1 + exp(logn)
-    T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
-    sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, α, n, saltconc)
+    θ_pred = fc.(T, sat; θsat, θres, Tₘ, α, n)
     @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
     return θ_pred
 end
@@ -201,11 +183,12 @@ end
 sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     logα = Normal(0,2),
     logn = Normal(0,2),
+    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     β = Exponential(1.0),
     ω₀ = Beta(1,1),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:PainterKarra},
@@ -216,6 +199,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     fc = model.sfcc
 	logα ~ priors.logα
 	logn ~ priors.logn
+	Tₘ ~ priors.Tₘ
     β ~ priors.β
     ω₀ ~ priors.ω₀
     ω = ω₀/β
@@ -223,7 +207,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     n = 1 + exp(logn)
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, β, ω, α, n)
+    θ_pred = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)
     @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
     return θ_pred
 end
