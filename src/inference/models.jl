@@ -91,21 +91,21 @@ sfccpriors(m::SFCCModel{<:Westermann}) = (
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:McKenzie}) = (
     logγ = Normal(0,2),
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Normal(0,2),
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 @model function sfccmodel(
     model::SFCCModel{Tfc},
@@ -134,7 +134,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:Hu2020},
@@ -159,7 +159,7 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:DallAmico},
@@ -188,7 +188,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     ω₀ = Beta(1,1),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc.f)),
+    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 @model function sfccmodel(
     model::SFCCModel{<:PainterKarra},
