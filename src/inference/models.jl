@@ -111,6 +111,9 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     model::SFCCModel{Tfc},
     T_obs::AbstractVector;
     priors=(;),
+    temperature_measurement_model=temperature_measurement_model,
+    swvmodel=swvmodel,
+    sfcclikelihood=sfcclikelihood,
 ) where {Tfc<:Union{McKenzie,Westermann}}
     priors = merge(sfccpriors(model), priors)
     fc = model.sfcc
@@ -140,6 +143,9 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     model::SFCCModel{<:Hu2020},
     T_obs::AbstractVector;
     priors=(;),
+    temperature_measurement_model=temperature_measurement_model,
+    swvmodel=swvmodel,
+    sfcclikelihood=sfcclikelihood,
 )
     priors = merge(sfccpriors(model), priors)
     fc = model.sfcc
@@ -154,7 +160,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
 end
 
 sfccpriors(m::SFCCModel{<:DallAmico}) = (
-    logα = Normal(0,2),
+    logα = Normal(0,5),
     logn = Normal(0,2),
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     lik = sfccpriors(m.lik),
@@ -165,6 +171,9 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     model::SFCCModel{<:DallAmico},
     T_obs::AbstractVector,
     priors=(;),
+    temperature_measurement_model=temperature_measurement_model,
+    swvmodel=swvmodel,
+    sfcclikelihood=sfcclikelihood,
 )
     priors = merge(sfccpriors(model), priors)
     fc = model.sfcc
@@ -181,11 +190,11 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
 end
 
 sfccpriors(m::SFCCModel{<:PainterKarra}) = (
-    logα = Normal(0,2),
+    logα = Normal(0,5),
     logn = Normal(0,2),
     Tₘ = truncated(Normal(0,0.5), -Inf, 0),
     β = Exponential(1.0),
-    ω₀ = Beta(1,1),
+    ω₀ = Beta(1,10),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -194,6 +203,9 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     model::SFCCModel{<:PainterKarra},
     T_obs::AbstractVector,
     priors=(;),
+    temperature_measurement_model=temperature_measurement_model,
+    swvmodel=swvmodel,
+    sfcclikelihood=sfcclikelihood,
 )
     priors = merge(sfccpriors(model), priors)
     fc = model.sfcc
