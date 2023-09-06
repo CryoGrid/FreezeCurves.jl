@@ -5,15 +5,25 @@ Represents a (truncated) isotropic Gaussian distributed observation model for vo
 This seems to be generally preferabe to the Beta likelihood both numerically and in terms of interpretability.
 """
 Base.@kwdef struct IsoNormalVWC{T} <: SFCCLikelihood
-    σ_mean::T = 0.1
+    σ_fc_mean::T = 0.05
+    σ_res_mean::T = 0.05
+    σ_sat_mean::T = 0.05
 end
 sfccpriors(m::IsoNormalVWC) = (
-    σ = Exponential(m.σ_mean),
+    σ_fc = Exponential(m.σ_fc_mean),
+    σ_res = Exponential(m.σ_res_mean),
+    σ_sat = Exponential(m.σ_sat_mean),
 )
-@model function sfcclikelihood(model::IsoNormalVWC, θ_pred, priors)
+@model function sfcclikelihood(model::IsoNormalVWC, pred, priors)
+    function vwcnormal(θw, θsat, θres, σ_fc, σ_res, σ_sat)
+        σ = σ_fc*(θres < θw < θsat) + σ_res*(θw < θres) + σ_sat*(θw > θsat)
+        return Normal(θw, σ)
+    end
     # truncated normal likelihood
-    σ ~ priors.σ
-    θ ~ arraydist(truncated.(Normal.(θ_pred,σ), 0, 1))
+    σ_fc ~ priors.σ_fc
+    σ_sat ~ priors.σ_sat
+    σ_res ~ priors.σ_res
+    θ ~ arraydist(truncated.(vwcnormal.(pred.θw, pred.θsat, pred.θres, σ_fc, σ_res, σ_sat), 0, 1))
     return θ
 end
 
@@ -28,10 +38,10 @@ end
 sfccpriors(m::BetaVWC) = (
     vwc_dispersion = truncated(Exponential(m.dispersion_mean), 1, Inf),
 )
-@model function sfcclikelihood(model::BetaVWC, θ_pred, priors)
+@model function sfcclikelihood(model::BetaVWC, pred, priors)
     # truncated normal likelihood
     vwc_dispersion ~ priors.vwc_dispersion
-    μ = θ_pred
+    μ = pred.θw
     ϕ = vwc_dispersion
     # take max w/ sqrt(eps()) to prevent zero values
     a = max.(μ.*ϕ, sqrt(eps()))
@@ -127,9 +137,9 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, Tₘ, pname => p)
-    @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
-    return θ_pred
+    θw = fc.(T, sat; θsat, θres, Tₘ, pname => p)
+    @submodel sfcclikelihood(model.lik, (; θw), priors.lik)
+    return θw
 end
 
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
@@ -154,9 +164,9 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, Tₘ, b)
-    @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
-    return θ_pred
+    θw = fc.(T, sat; θsat, θres, Tₘ, b)
+    @submodel sfcclikelihood(model.lik, (; θw), priors.lik)
+    return θw
 end
 
 sfccpriors(m::SFCCModel{<:DallAmico}) = (
@@ -219,7 +229,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     n = 1 + exp(logn)
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θ_pred = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)
-    @submodel sfcclikelihood(model.lik, θ_pred, priors.lik)
-    return θ_pred
+    θw = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)
+    @submodel sfcclikelihood(model.lik, (; θw), priors.lik)
+    return θw
 end
