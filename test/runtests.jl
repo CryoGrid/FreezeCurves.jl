@@ -7,4 +7,5 @@ using Unitful
     include("swrc_tests.jl")
     include("sfcc_tests.jl")
     include("solver_tests.jl")
+    include("inference_tests.jl")
 end
