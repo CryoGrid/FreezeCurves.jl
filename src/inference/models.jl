@@ -5,9 +5,9 @@ Represents a (truncated) isotropic Gaussian distributed observation model for vo
 This seems to be generally preferabe to the Beta likelihood both numerically and in terms of interpretability.
 """
 Base.@kwdef struct IsoNormalVWC{T} <: SFCCLikelihood
-    σ_fc_mean::T = 0.05
-    σ_res_mean::T = 0.05
-    σ_sat_mean::T = 0.05
+    σ_fc_mean::T = 0.01
+    σ_res_mean::T = 0.01
+    σ_sat_mean::T = 0.01
 end
 sfccpriors(m::IsoNormalVWC) = (
     σ_fc = Exponential(m.σ_fc_mean),
