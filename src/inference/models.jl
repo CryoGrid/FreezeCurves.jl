@@ -5,22 +5,15 @@ Represents a (truncated) isotropic Gaussian distributed observation model for vo
 This seems to be generally preferabe to the Beta likelihood both numerically and in terms of interpretability.
 """
 Base.@kwdef struct IsoNormalVWC{T} <: SFCCLikelihood
-    σ_fc_mean::T = 0.01
-    σ_sat_mean::T = 0.01
+    σ_mean::T = 0.01
 end
 sfccpriors(m::IsoNormalVWC) = (
-    σ_fc = Exponential(m.σ_fc_mean),
-    σ_sat = Exponential(m.σ_sat_mean),
+    σ = Exponential(m.σ_mean),
 )
 @model function sfcclikelihood(model::IsoNormalVWC, pred, priors)
-    function vwcnormal(θw, T, Tₘ, σ_fc, σ_sat)
-        σ = σ_fc*(T < Tₘ) + σ_sat*(T >= Tₘ)
-        return Normal(θw, σ)
-    end
     # truncated normal likelihood
-    σ_fc ~ priors.σ_fc
-    σ_sat ~ priors.σ_sat
-    θ ~ arraydist(truncated.(vwcnormal.(pred.θw, pred.T, pred.Tₘ, σ_fc, σ_sat), 0, 1))
+    σ ~ priors.σ
+    θ ~ arraydist(truncated.(Normal.(pred.θw, σ), 0, 1))
     return θ
 end
 
@@ -129,21 +122,21 @@ sfccmodel(model::SFCCModel, T::AbstractVector, priors, args...; kwargs...) = err
 
 sfccpriors(m::SFCCModel{<:Westermann}) = (
     logδ = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:McKenzie}) = (
     logγ = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -176,7 +169,7 @@ end
 
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Beta(1,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -205,7 +198,7 @@ end
 sfccpriors(m::SFCCModel{<:DallAmico}) = (
     logα = Normal(0,5),
     logn = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -236,9 +229,9 @@ end
 sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     logα = Normal(0,5),
     logn = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.5), -Inf, 0),
-    β = Exponential(1.0),
-    ω₀ = Beta(1,10),
+    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
+    # β = Exponential(1.0),
+    ω₀ = Beta(1,1),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -256,7 +249,8 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
 	logα ~ priors.logα
 	logn ~ priors.logn
 	Tₘ ~ priors.Tₘ
-    β ~ priors.β
+    # β ~ priors.β
+    β = fc.β
     ω₀ ~ priors.ω₀
     ω = ω₀/β
     α = exp(logα)
