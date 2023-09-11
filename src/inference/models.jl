@@ -6,24 +6,21 @@ This seems to be generally preferabe to the Beta likelihood both numerically and
 """
 Base.@kwdef struct IsoNormalVWC{T} <: SFCCLikelihood
     σ_fc_mean::T = 0.01
-    σ_res_mean::T = 0.01
     σ_sat_mean::T = 0.01
 end
 sfccpriors(m::IsoNormalVWC) = (
     σ_fc = Exponential(m.σ_fc_mean),
-    σ_res = Exponential(m.σ_res_mean),
     σ_sat = Exponential(m.σ_sat_mean),
 )
 @model function sfcclikelihood(model::IsoNormalVWC, pred, priors)
-    function vwcnormal(θw, θsat, θres, σ_fc, σ_res, σ_sat)
-        σ = σ_fc*(θres < θw < θsat) + σ_res*(θw < θres) + σ_sat*(θw > θsat)
+    function vwcnormal(θw, T, Tₘ, σ_fc, σ_sat)
+        σ = σ_fc*(T < Tₘ) + σ_sat*(T >= Tₘ)
         return Normal(θw, σ)
     end
     # truncated normal likelihood
     σ_fc ~ priors.σ_fc
     σ_sat ~ priors.σ_sat
-    σ_res ~ priors.σ_res
-    θ ~ arraydist(truncated.(vwcnormal.(pred.θw, pred.θsat, pred.θres, σ_fc, σ_res, σ_sat), 0, 1))
+    θ ~ arraydist(truncated.(vwcnormal.(pred.θw, pred.T, pred.Tₘ, σ_fc, σ_sat), 0, 1))
     return θ
 end
 
@@ -47,6 +44,40 @@ sfccpriors(m::BetaVWC) = (
     a = max.(μ.*ϕ, sqrt(eps()))
     b = max.((1 .- μ).*ϕ, sqrt(eps()))
     θ ~ arraydist(Beta.(a, b))
+    return θ
+end
+
+"""
+    BetaNormalVWC{T} <: SFCCLikelihood
+
+Represents a Beta distribtued observation model for volumetric water content with
+normally distribtued noise above the melting point.
+"""
+Base.@kwdef struct BetaNormalVWC{Ts1,Td1,Td2} <: SFCCLikelihood
+    σ_sat_mean::Ts1 = 0.05
+    dispersion_mean::Td1 = 99.0
+    dispersion_scale::Td2 = 50.0
+end
+sfccpriors(m::BetaNormalVWC) = (
+    σ_sat = Exponential(m.σ_sat_mean),
+    vwc_dispersion = from_moments(LogNormal, m.dispersion_mean, m.dispersion_scale),
+)
+@model function sfcclikelihood(model::BetaNormalVWC, pred, priors)
+    function vwcdist(θw, T, Tₘ, disp, σ_sat)
+        if T >= Tₘ
+            return Normal(θw, σ_sat)
+        else
+            μ = θw
+            ϕ = 1 + disp
+            # take max w/ sqrt(eps()) to prevent zero values
+            a = max(μ*ϕ, sqrt(eps()))
+            b = max((1 - μ)*ϕ, sqrt(eps()))
+            return Beta(a, b)
+        end
+    end
+    σ_sat ~ priors.σ_sat
+    vwc_dispersion ~ priors.vwc_dispersion
+    θ ~ arraydist(vwcdist.(pred.θw, pred.T, pred.Tₘ, vwc_dispersion, σ_sat))
     return θ
 end
 
@@ -138,7 +169,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
     θw = fc.(T, sat; θsat, θres, Tₘ, pname => p)
-    pred = (; θw, θsat, θres)
+    pred = (; θw, θsat, θres, T, Tₘ)
     @submodel sfcclikelihood(model.lik, pred, priors.lik)
     return pred
 end
@@ -166,7 +197,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     p = exp(logp)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
     θw = fc.(T, sat; θsat, θres, Tₘ, b)
-    pred = (; θw, θsat, θres)
+    pred = (; θw, θsat, θres, T, Tₘ)
     @submodel sfcclikelihood(model.lik, pred, priors.lik)
     return pred
 end
@@ -197,7 +228,7 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
     θw = fc.(T, sat; θsat, θres, Tₘ, α, n)
-    pred = (; θw, θsat, θres)
+    pred = (; θw, θsat, θres, T, Tₘ)
     @submodel sfcclikelihood(model.lik, pred, priors.lik)
     return pred
 end
@@ -233,7 +264,14 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
     sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
     θw = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)
-    pred = (; θw, θsat, θres)
+    pred = (; θw, θsat, θres, T, Tₘ)
     @submodel sfcclikelihood(model.lik, pred, priors.lik)
     return pred
+end
+
+function from_moments(::Type{LogNormal}, mean, stddev)
+    var = stddev^2
+    μ = log(mean / sqrt(var / mean^2 + 1))
+    σ = sqrt(log(var / mean^2 + 1))
+    return LogNormal(μ, σ)
 end
