@@ -64,6 +64,6 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNewtonSolver, 
         itercount += 1
     end
     # Re-evaluate freeze curve at solution
-    θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
+    θw, ∂θw∂T = ∇(T -> obj.f(T, obj.sat; obj.f_kwargs...), T)
     return return_all ? (;T, θw, C, ∂θw∂T, Tres, itercount) : T
 end
