@@ -158,7 +158,7 @@ mutable struct SFCCPreSolverCacheND{N,TF} <: AbstractPreSolverCache
         return new{N,typeof(lut)}(lut, false)
     end
 end
-function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCacheND{N}}, fc::SFCC, hc::F; sat=1.0, fc_kwargs...) where {N,F}
+function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCacheND{N}}, fc::SFCC, hc::F; sat=1.0, θsat=0.5, fc_kwargs...) where {N,F}
     let Tₘ = SoilFreezeThawProperties(fc).Tₘ,
         Lsl = SoilFreezeThawProperties(fc).Lsl,
         ρw = SoilWaterVolume(fc).ρw,
@@ -166,13 +166,19 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCacheND{N}}, fc::SFCC,
         f(T, sat; kwargs...) = fc(T, sat; kwargs...);
         # residual as a function of T and H
         resid(T, H, sat, f_kwargs) = FreezeCurves.temperature_residual(fc, hc, L, H, T, sat; f_kwargs...)
-        function solve_T(;H, sat, kwargs...)
-            f_kwargs = (; kwargs...)
+        function solve_T(;H, sat, θsat, kwargs...)
+            f_kwargs = (; θsat, kwargs...)
             obj = SFCCInverseEnthalpyObjective(fc, f_kwargs, hc, L, H, sat)
             res = sfccsolve(obj, SFCCNewtonSolver(), Tₘ-1.0)
             return res.T
         end
-        lut = build_lut(solve_T, :H => solver.cache.lut.coords.H, :sat => solver.cache.lut.coords.sat, fc_kwargs...)
+        lut = build_lut(
+            solve_T,
+            :H => solver.cache.lut.coords.H,
+            :sat => solver.cache.lut.coords.sat,
+            :θsat => solver.cache.lut.coords.θsat,
+            fc_kwargs...
+        )
         solver.cache.lut = lut
         solver.cache.initialized = true
         return nothing
