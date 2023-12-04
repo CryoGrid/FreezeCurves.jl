@@ -9,7 +9,8 @@ struct SFCCPreSolver{TCache} <: SFCCSolver
     cache::TCache
     Tmin::Float64
     errtol::Float64
-    SFCCPreSolver(cache, Tmin, errtol) = new{typeof(cache)}(cache, Tmin, errtol)
+    reinit::Bool # if true, always reinitialize the presolver cache when initialize! is called
+    SFCCPreSolver(cache, Tmin, errtol, reinit=true) = new{typeof(cache)}(cache, Tmin, errtol, reinit)
     """
         SFCCPreSolver(cache::AbstractPreSolverCache; Tmin=-60.0, errtol=1e-4)
 
@@ -17,8 +18,8 @@ struct SFCCPreSolver{TCache} <: SFCCSolver
     Enthalpy values below `H(Tmin)` under the given freeze curve will be extrapolated with a
     constant/flat function. `errtol` determines the permitted local error in the interpolant.
     """
-    function SFCCPreSolver(cache::AbstractPreSolverCache=SFCCPreSolverCacheND(); Tmin=-60.0, errtol=1e-4)
-        new{typeof(cache)}(cache, Tmin, errtol)
+    function SFCCPreSolver(cache::AbstractPreSolverCache=SFCCPreSolverCacheND(); Tmin=-60.0, errtol=1e-4, reinit=true)
+        new{typeof(cache)}(cache, Tmin, errtol, reinit)
     end
 end
 
@@ -52,6 +53,10 @@ Initializes this `SFCCPreSolver` by building interpolants for `fc` and its deriv
 `hc` must be heat capacity as a function of liquid water content.
 """
 function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc::F; sat=1.0, θsat=SoilWaterVolume(fc).θsat, fc_kwargs...) where {F}
+    if solver.cache.initialized && !solver.reinit
+        # skip re-initialization
+        return nothing
+    end
     # pre-solve freeze curve;
     # note that this is only valid given that the following assumptions hold:
     # 1) none of the freeze curve parameters (e.g. soil properties) change
@@ -158,7 +163,12 @@ mutable struct SFCCPreSolverCacheND{N,TF} <: AbstractPreSolverCache
         return new{N,typeof(lut)}(lut, false)
     end
 end
+
 function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCacheND{N}}, fc::SFCC, hc::F; sat=1.0, θsat=0.5, fc_kwargs...) where {N,F}
+    if solver.cache.initialized && !solver.reinit
+        # skip re-initialization
+        return nothing
+    end
     let Tₘ = SoilFreezeThawProperties(fc).Tₘ,
         Lsl = SoilFreezeThawProperties(fc).Lsl,
         ρw = SoilWaterVolume(fc).ρw,
