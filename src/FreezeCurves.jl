@@ -51,9 +51,10 @@ enthalpy(T, C, L, θw) = T*C + L*θw
     normalize_temperature(x)
     normalize_temperature(x::TemperatureQuantity)
 
-Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherwise, if `x` a general numeric type, it is assumed that `x` is in celsius.
+Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherwise, if `x` a general numeric type, does a heuristic check `x <= 200`
+and assumes the given temperature is in celsius if the condition is satisfied.
 """
-normalize_temperature(x) = x + 273.15
+normalize_temperature(x) = x > 200.0 ? x : x + 273.15
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 """
@@ -82,12 +83,19 @@ include("sfcc.jl")
 include("sfccsolvers/solvers.jl")
 
 # Extra utilities
+
+# strip units and conver
+stripunits(x::Number) = x
+stripunits(x::Quantity) = ustrip(upreferred(x))
+stripunits(x::TemperatureQuantity) = ustrip(x)
+
 """
     ustrip(x)
 
-Reconstructs the type or function `x` with all numerical quantities stripped of units.
+Reconstructs the type or function `x` with all numerical quantities stripped of units. All units are first converted
+to preferred SI units before being stripped.
 """
-ustrip(x::Union{SFCC,SWRC}) = Flatten.reconstruct(x, map(ustrip, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
+ustrip(x::Union{SFCC,SWRC}) = Flatten.reconstruct(x, map(stripunits, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
 
 include("plotting.jl")
 
