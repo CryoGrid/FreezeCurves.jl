@@ -1,16 +1,20 @@
 abstract type SaturationState{T} end
+
 struct MatricPotential{T} <: SaturationState{T}
     value::T
 end
+
 struct Saturation{T} <: SaturationState{T}
     value::T
 end
+
 """
     SWRC
 
 Base type for soil water retention curves (SWRC) which relate soil water matric potential to water content.
 """
 abstract type SWRC end
+
 """
     Base.inv(f::SWRC)
 
@@ -18,6 +22,7 @@ Returns a function `(args...) -> f(inv, args...)` which, when implemented, evalu
 soil water retention curve.
 """
 Base.inv(f::SWRC) = (args...; kwargs...) -> f(inv, args...; kwargs...)
+
 """
     SoilWaterVolume{Tρw,Tθres,Tθsat}
 
@@ -39,12 +44,14 @@ Get the `SoilWaterVolume` defined for the given `SWRC` `f`. Must be implemented
 for all `SWRC` types. Default implementation retrieves the field `water`.
 """
 SoilWaterVolume(f::SWRC) = f.vol
+
 """
     inflectionpoint(f::SWRC)
 
 Returns the analytical solution for the inflection point (i.e. where ∂²θ/∂ψ² = 0) of the SWRC, if available.
 """
 inflectionpoint(f::SWRC) = error("not implemented for $f")
+
 """
     waterpotential(f::SWRC, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwargs...)
 
@@ -55,6 +62,7 @@ function waterpotential(f::SWRC, θ; θsat=f.vol.θsat, θres=f.vol.θres, kwarg
         f(inv, θ; θsat, θres, kwargs...)
     end
 end
+
 """
     VanGenuchten{Tvol,Tα,Tn} <: SWRC
 
@@ -83,7 +91,22 @@ function (f::VanGenuchten)(
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
     end
 end
+
 inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
+
+# Preset Van Genucthen curves from soil types;
+# based on Carsel and Parrish (1988) but with maximum 5% residual water content
+VanGenuchten(name::String) = VanGenuchten(Symbol(lowercase(replace(name, " " => ""))))
+VanGenuchten(name::Symbol) = VanGenuchten(Val{name}())
+VanGenuchten(::Val{:sand}) = VanGenuchten(α=0.074u"cm", n=2.96, vol=SoilWaterVolume(θsat=0.33, θres=0.03))
+VanGenuchten(::Val{:sandyloam}) = VanGenuchten(α=0.075u"cm", n=2.28, vol=SoilWaterVolume(θsat=0.41, θres=0.05))
+VanGenuchten(::Val{:siltloam}) = VanGenuchten(α=0.02u"cm", n=1.41, vol=SoilWaterVolume(θsat=0.45, θres=0.05))
+VanGenuchten(::Val{:sandyclayloam}) = VanGenuchten(α=0.06u"cm", n=1.48, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
+VanGenuchten(::Val{:silt}) = VanGenuchten(α=0.016u"cm", n=1.37, vol=SoilWaterVolume(θsat=0.46, θres=0.03))
+VanGenuchten(::Val{:sandyclay}) = VanGenuchten(α=0.027u"cm", n=1.23, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
+VanGenuchten(::Val{:siltyclay}) = VanGenuchten(α=0.005u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
+VanGenuchten(::Val{:clay}) = VanGenuchten(α=0.008u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
+
 """
     BrooksCorey{Twp,Tψₛ,Tλ} <: SWRC
 
