@@ -75,8 +75,10 @@ Base.@kwdef struct VanGenuchten{Tvol,Tα,Tn} <: SWRC
     n::Tn = 2.0 # domain: (1,Inf)
 end
 function (f::VanGenuchten)(ψ; θsat=f.vol.θsat, θres=f.vol.θres, α=f.α, n=f.n)
-    let m = 1-1/n;
-        IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*(1 + (-α*ψ)^n)^(-m), θsat*one(ψ))
+    let m = 1-1/n,
+        x = 1 + (-α*ψ)^n;
+        # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
+        IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
     end
 end
 function (f::VanGenuchten)(
@@ -98,15 +100,15 @@ inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
 # based on Carsel and Parrish (1988) but with maximum 5% residual water content
 VanGenuchten(name::String) = VanGenuchten(Symbol(lowercase(replace(name, " " => ""))))
 VanGenuchten(name::Symbol) = VanGenuchten(Val{name}())
-VanGenuchten(::Val{:sand}) = VanGenuchten(α=0.074u"cm", n=2.96, vol=SoilWaterVolume(θsat=0.33, θres=0.03))
-VanGenuchten(::Val{:sandyloam}) = VanGenuchten(α=0.075u"cm", n=2.28, vol=SoilWaterVolume(θsat=0.41, θres=0.05))
-VanGenuchten(::Val{:siltloam}) = VanGenuchten(α=0.02u"cm", n=1.41, vol=SoilWaterVolume(θsat=0.45, θres=0.05))
-VanGenuchten(::Val{:sandyclayloam}) = VanGenuchten(α=0.06u"cm", n=1.48, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
-VanGenuchten(::Val{:silt}) = VanGenuchten(α=0.016u"cm", n=1.37, vol=SoilWaterVolume(θsat=0.46, θres=0.03))
-VanGenuchten(::Val{:sandyclay}) = VanGenuchten(α=0.027u"cm", n=1.23, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
-VanGenuchten(::Val{:siltyclay}) = VanGenuchten(α=0.005u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
-VanGenuchten(::Val{:clay}) = VanGenuchten(α=0.008u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
-VanGenuchten(::Val{:organic}) = VanGenuchten(α=0.013u"cm", n=1.20, vol=SoilWaterVolume(θsat=0.77, θres=0.01))
+VanGenuchten(::Val{:sand}) = VanGenuchten(α=0.074u"cm^-1", n=2.96, vol=SoilWaterVolume(θsat=0.33, θres=0.03))
+VanGenuchten(::Val{:sandyloam}) = VanGenuchten(α=0.075u"cm^-1", n=2.28, vol=SoilWaterVolume(θsat=0.41, θres=0.05))
+VanGenuchten(::Val{:siltloam}) = VanGenuchten(α=0.02u"cm^-1", n=1.41, vol=SoilWaterVolume(θsat=0.45, θres=0.05))
+VanGenuchten(::Val{:sandyclayloam}) = VanGenuchten(α=0.06u"cm^-1", n=1.48, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
+VanGenuchten(::Val{:silt}) = VanGenuchten(α=0.016u"cm^-1", n=1.37, vol=SoilWaterVolume(θsat=0.46, θres=0.03))
+VanGenuchten(::Val{:sandyclay}) = VanGenuchten(α=0.027u"cm^-1", n=1.23, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
+VanGenuchten(::Val{:siltyclay}) = VanGenuchten(α=0.005u"cm^-1", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
+VanGenuchten(::Val{:clay}) = VanGenuchten(α=0.008u"cm^-1", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
+VanGenuchten(::Val{:organic}) = VanGenuchten(α=0.013u"cm^-1", n=1.20, vol=SoilWaterVolume(θsat=0.77, θres=0.01))
 
 """
     BrooksCorey{Twp,Tψₛ,Tλ} <: SWRC
