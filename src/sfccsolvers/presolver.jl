@@ -202,7 +202,7 @@ function sfccsolve(
     ::Val{return_all}=Val{true}()
 ) where {return_all}
     @assert solver.cache.initialized "solver not yet initialized"
-    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f))
+    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f).θsat)
     θtot = obj.sat*θsat
     L = obj.L
     H = @SVector[obj.H]
