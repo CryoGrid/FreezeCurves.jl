@@ -106,6 +106,7 @@ VanGenuchten(::Val{:silt}) = VanGenuchten(α=0.016u"cm", n=1.37, vol=SoilWaterVo
 VanGenuchten(::Val{:sandyclay}) = VanGenuchten(α=0.027u"cm", n=1.23, vol=SoilWaterVolume(θsat=0.39, θres=0.05))
 VanGenuchten(::Val{:siltyclay}) = VanGenuchten(α=0.005u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
 VanGenuchten(::Val{:clay}) = VanGenuchten(α=0.008u"cm", n=1.09, vol=SoilWaterVolume(θsat=0.38, θres=0.05))
+VanGenuchten(::Val{:organic}) = VanGenuchten(α=0.013u"cm", n=1.20, vol=SoilWaterVolume(θsat=0.77, θres=0.01))
 
 """
     BrooksCorey{Twp,Tψₛ,Tλ} <: SWRC

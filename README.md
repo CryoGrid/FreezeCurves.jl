@@ -117,6 +117,24 @@ plot!(Trange, Westermann(δ=0.2u"K"), label="δ=0.2")
 
 For more details and examples, see the [documentation]().
 
+## Soil water retention curves
+
+Many SFCC formulations are based on an underlying SWRC, the most widely used being the van Genucthen model. Examples of such freeze curves in this package include `PainterKarra` and `DallAmico`.
+
+SWRCs are implemented standalone in `FreezeCurves` as subtypes of `SWRC`. Currently, only two SWRC models are provided: `VanGenuchten` and `BrooksCorey`.
+
+Since version 0.9, default van Genuchten curves for various soil types are provided for convenience. These are accessible as additional dispatches of the `VanGenuchten` constructor:
+
+```julia
+# to get a water retention curve for a silty clay soil:
+swrc = VanGenuchten(:siltyclay)
+
+# alternatively, one can use a string
+swrc = VanGenuchten("silty clay")
+```
+
+Preset configurations are currently provided for sand, silt, clay, sandy loam, silty loam, silty clay, sandy clay, and organic soils.
+
 ## References
 
 Brooks RH. Hydraulic properties of porous media. Colorado State University; 1965.
