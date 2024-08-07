@@ -31,13 +31,14 @@ Note that this presolver implementation is **only valid when all other freeze cu
 """
 mutable struct SFCCPreSolverCache1D{TF} <: AbstractPreSolverCache
     f_H::TF # θw(H) interpolant
+    ΔH_min::Float64
     initialized::Bool
-    function SFCCPreSolverCache1D()
+    function SFCCPreSolverCache1D(ΔH_min=1e-3)
         # initialize with dummy functions to get type information;
         # this is just to make sure that the compiler can still infer all of the types.
         x  = -3e8:1e6:3e8
         dummy_f = _build_interpolant1D(x, zeros(length(x)))
-        return new{typeof(dummy_f)}(dummy_f, false)
+        return new{typeof(dummy_f)}(dummy_f, ΔH_min, false)
     end
 end
 function _build_interpolant1D(H, θw)
@@ -67,7 +68,7 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc
         ρw = SoilWaterVolume(fc).ρw,
         L = ρw*Lsl,
         f_kwargs = (; θsat, fc_kwargs...),
-        f(T) = fc(T; f_kwargs...),
+        f(T) = fc(T, sat; f_kwargs...),
         Hmin = FreezeCurves.enthalpy(Tmin, hc(f(Tmin), sat*θsat, θsat), L, f(Tmin)),
         Hmax = FreezeCurves.enthalpy(Tmax, hc(f(Tmax), sat*θsat, θsat), L, f(Tmax));
         # residual as a function of T and H
@@ -107,6 +108,10 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc
                 ϵ = step(ΔH, H[end], θw[end], ∂θw∂H[end], T[end])
                 # iteratively halve the step size until error tolerance is satisfied
                 ΔH *= 0.5
+                if ΔH < solver.cache.ΔH_min
+                    @warn "ΔH ($ΔH) < ΔH_min ($(solver.cache.ΔH_min))! SFCC approximation tolerance not guaranteed (ϵ = $ϵ)"
+                    break
+                end
             end
             Hnew = H[end] + ΔH
             @assert isfinite(Hnew) "isfinite(ΔH) failed; H=$(H[end]), T=$(T[end]), ΔH=$ΔH"
