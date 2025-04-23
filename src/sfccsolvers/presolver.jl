@@ -94,7 +94,8 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc
             # return residual of error with target error
             return err
         end
-        T = [Tmin]
+        # multiply by one(ustrip(Hmin)) to ensure type consistency (e.g. for AD types)
+        T = [Tmin*one(ustrip(Hmin))]
         H = [Hmin]
         θw = [f(T[1])]
         ∂θw∂T₀, ∂θw∂H₀ = deriv(T[1])
