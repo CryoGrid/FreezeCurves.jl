@@ -1,7 +1,7 @@
 name = "FreezeCurves"
 uuid = "71e4ad71-e4f2-45a3-aa0a-91ffaa9676be"
 authors = ["Brian Groenke <brian.groenke@awi.de> and contributors"]
-version = "0.9.3"
+version = "0.9.4"
 
 [deps]
 Flatten = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
@@ -19,12 +19,12 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Flatten = "0.4"
-ForwardDiff = "0.10"
+ForwardDiff = "0.10, 1"
 IfElse = "0.1"
-Interpolations = "0.14, 0.15"
+Interpolations = "0.14, 0.15, 0.16"
 IntervalSets = "0.7"
 NLsolve = "4"
-NonlinearSolve = "1.1"
+NonlinearSolve = "1.1, 2, 3, 4"
 RecipesBase = "1"
 Reexport = "1"
 Requires = "1"
