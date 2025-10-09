@@ -23,6 +23,7 @@ ForwardDiff = "0.10, 1"
 IfElse = "0.1"
 Interpolations = "0.14, 0.15, 0.16"
 IntervalSets = "0.7"
+QuadGK = "2"
 NLsolve = "4"
 NonlinearSolve = "1.1, 2, 3, 4"
 RecipesBase = "1"
@@ -36,9 +37,10 @@ julia = "1.6"
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 
 [targets]
-test = ["Test", "BenchmarkTools", "NonlinearSolve", "Optim", "Turing"]
+test = ["Test", "BenchmarkTools", "NonlinearSolve", "QuadGK", "Optim", "Turing"]

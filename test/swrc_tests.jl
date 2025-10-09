@@ -1,4 +1,5 @@
 using FreezeCurves
+using QuadGK
 using Test
 using Unitful
 
@@ -16,6 +17,12 @@ using Unitful
             # check inverse
             @test isapprox(Base.inv(f)(θw; θsat, θres, α, n), -0.1u"m", atol=1e-6u"m")
             @test isapprox(Base.inv(f)(θsat; θsat, θres, α, n), 0.0u"m", atol=1e-6u"m")
+            # check derivative using fundamental theorem of calculus
+            a = -10.0u"m"
+            b = -0.01u"m"
+            ∂f∂ψ = FreezeCurves.derivative(f)
+            f̃, _ = quadgk(∂f∂ψ, a, b)
+            @test f̃ ≈ f(b) - f(a)
         end
     end
     @testset "VanGenuchten (units)" begin
@@ -37,6 +44,12 @@ using Unitful
             # check inverse
             @test isapprox(Base.inv(f)(θw; θsat, θres, ψₛ, λ), -0.5u"m", atol=1e-6u"m")
             @test isapprox(Base.inv(f)(θsat; θsat, θres, ψₛ, λ), -ψₛ, atol=1e-6u"m")
+            # check derivative using fundamental theorem of calculus
+            a = -10.0u"m"
+            b = -0.01u"m"
+            ∂f∂ψ = FreezeCurves.derivative(f)
+            f̃, _ = quadgk(∂f∂ψ, a, b)
+            @test f̃ ≈ f(b) - f(a)
         end
     end
 end

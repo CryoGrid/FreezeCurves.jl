@@ -18,10 +18,16 @@ abstract type SWRC end
 """
     Base.inv(f::SWRC)
 
-Returns a function `(args...) -> f(inv, args...)` which, when implemented, evaluates the inverse of the
-soil water retention curve.
+Returns a function that evaluates the inverse of the soil water retention curve, `f`.
 """
 Base.inv(f::SWRC) = (args...; kwargs...) -> f(inv, args...; kwargs...)
+
+"""
+    derivative(f::SWRC)
+
+Returns a function that evaluates the derivative `∂f∂ψ` of the soil water retention curve, `f`.
+"""
+derivative(f::SWRC) = (args...; kwargs...) -> f(derivative, args..., kwargs...)
 
 """
     SoilWaterVolume{Tρw,Tθres,Tθsat}
@@ -78,9 +84,10 @@ function (f::VanGenuchten)(ψ; θsat=f.vol.θsat, θres=f.vol.θres, α=f.α, n=
     let m = 1-1/n,
         x = 1 + (-α*ψ)^n;
         # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
-        IfElse.ifelse(ψ <= zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
+        IfElse.ifelse(ψ < zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
     end
 end
+
 function (f::VanGenuchten)(
     ::typeof(inv),
     θ;
@@ -91,6 +98,21 @@ function (f::VanGenuchten)(
 )
     let m = 1-1/n;
         IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
+    end
+end
+
+function (f::VanGenuchten)(
+    ::typeof(derivative),
+    ψ;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
+    α=f.α,
+    n=f.n
+)
+    let m = 1-1/n,
+        x = 1 + (-α*ψ)^n;
+        # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
+        IfElse.ifelse(ψ < zero(ψ), α*n*m*(θsat - θres)*x^(-m-1)*(-α*ψ)^(n-1), 0)
     end
 end
 
@@ -121,6 +143,7 @@ Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRC
     ψₛ::Tψₛ = 0.01u"m"
     λ::Tλ = 0.2 # domain: (0,Inf)
 end
+
 function (f::BrooksCorey)(
     ψ;
     θsat=f.vol.θsat,
@@ -130,6 +153,7 @@ function (f::BrooksCorey)(
 )
     IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat*one(ψ))
 end
+
 function (f::BrooksCorey)(
     ::typeof(inv),
     θ;
@@ -140,4 +164,16 @@ function (f::BrooksCorey)(
 )
     IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ*one(θ))
 end
+
+function (f::BrooksCorey)(
+    ::typeof(derivative),
+    ψ;
+    θsat=f.vol.θsat,
+    θres=f.vol.θres,
+    ψₛ=f.ψₛ,
+    λ=f.λ
+)
+    IfElse.ifelse(ψ < -ψₛ, (θsat - θres)*λ*(-ψₛ / ψ)^(λ-1)*(ψₛ*ψ^-2), θsat*one(ψ))
+end
+
 inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
