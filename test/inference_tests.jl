@@ -9,7 +9,7 @@ using Test
     sfcc_model = SFCCModel(fc)
     # condition on data
     m = sfcc_model(Trange, θtrue)
-    pred = m()
+    _, pred = m()
     @test all(isfinite.(pred.θw))
     @test all(0 .< pred.θw .< 1)
 end
