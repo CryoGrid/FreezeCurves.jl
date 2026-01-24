@@ -122,21 +122,21 @@ sfccmodel(model::SFCCModel, T::AbstractVector, priors, args...; kwargs...) = err
 
 sfccpriors(m::SFCCModel{<:Westermann}) = (
     logδ = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:McKenzie}) = (
     logγ = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
 )
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Normal(0,2),
-    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
+    Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
     vol = sfccpriors(SoilWaterVolume(m.sfcc)),
@@ -158,13 +158,15 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     end
     logp ~ NamedDist(dist, pname)
 	Tₘ ~ priors.Tₘ
-    T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
+    temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas))
     p = exp(logp)
-    sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
+    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol))
+    (; sat, θsat, θres) = vol
+    T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, pname => p)
     pred = (; θw, θsat, θres, T, Tₘ)
-    @submodel sfcclikelihood(model.lik, pred, priors.lik)
-    return pred
+    vwc ~ to_submodel(sfcclikelihood(model.lik, pred, priors.lik))
+    return vwc, pred
 end
 
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
@@ -186,13 +188,14 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     fc = model.sfcc
     b ~ priors.b
 	Tₘ ~ priors.Tₘ
-    T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
-    p = exp(logp)
-    sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
-    θw = fc.(T, sat; θsat, θres, Tₘ, b)
+    temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas))
+    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol))
+    (; sat, θsat, θres) = vol
+    T = temp
+    θw = fc.(T, sat; θsat, θres, Tₘ)
     pred = (; θw, θsat, θres, T, Tₘ)
-    @submodel sfcclikelihood(model.lik, pred, priors.lik)
-    return pred
+    vwc ~ to_submodel(sfcclikelihood(model.lik, pred, priors.lik))
+    return vwc, pred
 end
 
 sfccpriors(m::SFCCModel{<:DallAmico}) = (
@@ -218,12 +221,14 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
 	Tₘ ~ priors.Tₘ
     α = exp(logα)
     n = 1 + exp(logn)
-    T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
-    sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
+    temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas), false)
+    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol), false)
+    (; sat, θsat, θres) = vol
+    T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, α, n)
     pred = (; θw, θsat, θres, T, Tₘ)
-    @submodel sfcclikelihood(model.lik, pred, priors.lik)
-    return pred
+    vwc ~ to_submodel(sfcclikelihood(model.lik, pred, priors.lik), false)
+    return vwc, pred
 end
 
 sfccpriors(m::SFCCModel{<:PainterKarra}) = (
@@ -255,12 +260,14 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     ω = ω₀/β
     α = exp(logα)
     n = 1 + exp(logn)
-    T = @submodel temperature_measurement_model(model.meas, T_obs, priors.meas)
-    sat, θsat, θres = @submodel swvmodel(SoilWaterVolume(fc), priors.vol)
+    temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas), false)
+    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol), false)
+    (; sat, θsat, θres) = vol
+    T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)
     pred = (; θw, θsat, θres, T, Tₘ)
-    @submodel sfcclikelihood(model.lik, pred, priors.lik)
-    return pred
+    vwc ~ to_submodel(sfcclikelihood(model.lik, pred, priors.lik), false)
+    return vwc, pred
 end
 
 function from_moments(::Type{LogNormal}, mean, stddev)

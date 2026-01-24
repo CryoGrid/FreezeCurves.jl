@@ -38,10 +38,6 @@ Base.@kwdef struct SoilWaterVolume{Tρw,Tθres,Tθsat}
     ρw::Tρw = 1000.0u"kg/m^3" # density of water
     θres::Tθres = 0.0 # residual water content
     θsat::Tθsat = 0.5 # saturated water content
-    function SoilWaterVolume(ρw, θres, θsat)
-        @assert zero(θres) <= θres < θsat <= one(θsat)
-        new{typeof(ρw),typeof(θres),typeof(θsat)}(ρw, θres, θsat)
-    end
 end
 """
     SoilWaterVolume(f::SWRC)

@@ -21,7 +21,7 @@ sfcc_model = SFCCModel(fc)
 m = sfcc_model(Trange, θtrue) # condition on data
 # draw 1,000 samples using the No U-Turn Sampler w/ 500 adaptation steps and 85% target acceptance rate; gradients are computed automatically by Turing using forward-mode automatic differentiation (ForwardDiff.jl).
 chain = sample(rng, m, NUTS(500,0.85), 1_000)
-display(chain)
+describe(chain)
 ```
 Output:
 ```
