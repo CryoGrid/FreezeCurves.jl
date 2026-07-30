@@ -363,7 +363,7 @@ function (f::Hu2020)(
     let T = normalize_temperature(T),
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
-        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot*one(T))
+        return IfElse.ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - abs((Tₘ - T) / Tₘ)^b), θtot*one(T))
     end
 end
 
