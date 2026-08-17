@@ -169,13 +169,6 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
     return vwc, pred
 end
 
-sfccpriors(m::SFCCModel{<:Hu2020}) = (
-    b = Beta(1,2),
-    Tₘ = truncated(Normal(0,0.25), -Inf, 0),
-    lik = sfccpriors(m.lik),
-    meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
-)
 @model function sfccmodel(
     model::SFCCModel{<:Hu2020},
     T_obs::AbstractVector;
