@@ -213,7 +213,7 @@ function sfccsolve(
     L = obj.L
     H = @SVector[obj.H]
     H_dual = dual(H, typeof(obj))[1]
-    T_dual = IfElse.ifelse(
+    T_dual = ifelse(
         obj.H > L*θtot,
         (H_dual - L*θtot) / obj.hc(θtot, θtot, θsat),
         solver.cache.lut(; H=H_dual, sat=obj.sat, obj.f_kwargs...)

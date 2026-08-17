@@ -1,7 +1,6 @@
 module FreezeCurves
 
 using ForwardDiff
-using IfElse
 using Interpolations
 using IntervalSets
 using RecipesBase
@@ -64,7 +63,7 @@ Differentiable implementation of heaviside step function, i.e:
 
 ``h(x) = \\begin{cases} 1 & x ≥ 0 \\\\ 0 & x < 0 \\end{cases}``
 """
-heaviside(x) = IfElse.ifelse(x >= zero(x), 1.0, 0.0)
+heaviside(x) = ifelse(x >= zero(x), 1.0, 0.0)
 
 include("math.jl")
 

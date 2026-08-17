@@ -16,4 +16,4 @@ f(θw,θtot,θsat) =
     \\end{cases}
 ```
 """
-heatcapacity(c_frozen::Number, c_thawed::Number) = (θw,θtot,θsat) -> IfElse.ifelse(θw < θtot, c_frozen, c_thawed)
+heatcapacity(c_frozen::Number, c_thawed::Number) = (θw,θtot,θsat) -> ifelse(θw < θtot, c_frozen, c_thawed)

@@ -1,12 +1,11 @@
 name = "FreezeCurves"
 uuid = "71e4ad71-e4f2-45a3-aa0a-91ffaa9676be"
-authors = ["Brian Groenke <brian.groenke@awi.de> and contributors"]
 version = "0.9.6"
+authors = ["Brian Groenke <brian.groenke@awi.de> and contributors"]
 
 [deps]
 Flatten = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
@@ -20,12 +19,11 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 [compat]
 Flatten = "0.4"
 ForwardDiff = "0.10, 1"
-IfElse = "0.1"
 Interpolations = "0.14, 0.15, 0.16"
 IntervalSets = "0.7"
-QuadGK = "2"
 NLsolve = "4"
 NonlinearSolve = "1.1, 2, 3, 4"
+QuadGK = "2"
 RecipesBase = "1"
 Reexport = "1"
 Requires = "1"
@@ -37,8 +35,8 @@ julia = "1.7,1.8,1.9,1.10,1.11,1.12"
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
-QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 

@@ -1,5 +1,4 @@
 using ForwardDiff
-using IfElse
 using Interpolations
 using NLsolve
 using StaticArrays

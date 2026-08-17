@@ -12,12 +12,12 @@ freewater(H, θtot, L) = freewater(H; θtot, L)
 function freewater(H; θtot=0.5, θres=0.0, L=3.34e8)
     θtot = max(1e-8, θtot - θres)
     Lθ = L*θtot
-    θw = IfElse.ifelse(
+    θw = ifelse(
         H < zero(H),
         # Case 1: H < 0 -> frozen
         θres,
         # Case 2: H >= 0
-        IfElse.ifelse(
+        ifelse(
             H >= Lθ,
             # Case 2a: H >= Lθ -> thawed
             θres + θtot,

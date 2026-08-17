@@ -80,7 +80,7 @@ function (f::VanGenuchten)(ψ; θsat=f.vol.θsat, θres=f.vol.θres, α=f.α, n=
     let m = 1-1/n,
         x = 1 + (-α*ψ)^n;
         # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
-        IfElse.ifelse(ψ < zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
+        ifelse(ψ < zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
     end
 end
 
@@ -93,7 +93,7 @@ function (f::VanGenuchten)(
     n=f.n
 )
     let m = 1-1/n;
-        IfElse.ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
+        ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
     end
 end
 
@@ -108,7 +108,7 @@ function (f::VanGenuchten)(
     let m = 1-1/n,
         x = 1 + (-α*ψ)^n;
         # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
-        IfElse.ifelse(ψ < zero(ψ), α*n*m*(θsat - θres)*x^(-m-1)*(-α*ψ)^(n-1), 0)
+        ifelse(ψ < zero(ψ), α*n*m*(θsat - θres)*x^(-m-1)*(-α*ψ)^(n-1), 0)
     end
 end
 
@@ -147,7 +147,7 @@ function (f::BrooksCorey)(
     ψₛ=f.ψₛ,
     λ=f.λ
 )
-    IfElse.ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat*one(ψ))
+    ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat*one(ψ))
 end
 
 function (f::BrooksCorey)(
@@ -158,7 +158,7 @@ function (f::BrooksCorey)(
     ψₛ=f.ψₛ,
     λ=f.λ,
 )
-    IfElse.ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ*one(θ))
+    ifelse(θ < θsat, -ψₛ*((θ - θres)/(θsat - θres))^(-1/λ), -ψₛ*one(θ))
 end
 
 function (f::BrooksCorey)(
@@ -169,7 +169,7 @@ function (f::BrooksCorey)(
     ψₛ=f.ψₛ,
     λ=f.λ
 )
-    IfElse.ifelse(ψ < -ψₛ, (θsat - θres)*λ*(-ψₛ / ψ)^(λ-1)*(ψₛ*ψ^-2), θsat*one(ψ))
+    ifelse(ψ < -ψₛ, (θsat - θres)*λ*(-ψₛ / ψ)^(λ-1)*(ψₛ*ψ^-2), θsat*one(ψ))
 end
 
 inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
