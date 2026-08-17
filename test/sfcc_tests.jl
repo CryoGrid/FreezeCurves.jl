@@ -50,6 +50,9 @@ using Unitful
             @test f(0.0u"°C"; θsat,θres,Tₘ,b) ≈ θtot
             θw = f(-0.1u"°C"; θsat,θres,Tₘ,b)
             @test θw > 0.0 && θw < θtot
+            # check that it doesn't fail for T > 0
+            θw = f(0.1u"°C"; θsat,θres,Tₘ,b)
+            @test θw ≈ θtot
         end
     end
     @testset "PowerLaw freeze curve" begin

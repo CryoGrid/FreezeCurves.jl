@@ -364,7 +364,8 @@ function (f::Hu2020)(
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
         # ifelse evaluates both branches, so we use max to guard against the case where T < Tₘ
-        return ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - ((Tₘ - T) / Tₘ)^b), θtot*one(T))
+        ΔT = max(Tₘ - T, zero(T))
+        return ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - (ΔT / Tₘ)^b), θtot*one(T))
     end
 end
 
