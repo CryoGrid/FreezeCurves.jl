@@ -105,10 +105,14 @@ function (f::VanGenuchten)(
     α=f.α,
     n=f.n
 )
+    # evaluate the unsaturated branch at a negative potential where saturated (ψ ≥ 0), so that
+    # neither branch involves powers of zero, which give NaN derivatives (and adjoints) for n < 2
     let m = 1-1/n,
-        x = 1 + (-α*ψ)^n;
-        # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
-        ifelse(ψ < zero(ψ), α*n*m*(θsat - θres)*x^(-m-1)*(-α*ψ)^(n-1), 0)
+        unsaturated = ψ < zero(ψ),
+        ψ_unsat = ifelse(unsaturated, ψ, -oneunit(ψ)),
+        x = 1 + (-α*ψ_unsat)^n,
+        ∂θ∂ψ = α*n*m*(θsat - θres)*x^(-m-1)*(-α*ψ_unsat)^(n-1);
+        ifelse(unsaturated, ∂θ∂ψ, zero(∂θ∂ψ))
     end
 end
 
@@ -169,7 +173,13 @@ function (f::BrooksCorey)(
     ψₛ=f.ψₛ,
     λ=f.λ
 )
-    ifelse(ψ < -ψₛ, (θsat - θres)*λ*(-ψₛ / ψ)^(λ-1)*(ψₛ*ψ^-2), θsat*one(ψ))
+    # evaluate the unsaturated branch below the air entry potential -ψₛ where saturated, and return a zero
+    # derivative of the same type there
+    let unsaturated = ψ < -ψₛ,
+        ψ_unsat = ifelse(unsaturated, ψ, oftype(ψ, -ψₛ - oneunit(ψ))),
+        ∂θ∂ψ = (θsat - θres)*λ*(-ψₛ / ψ_unsat)^(λ-1)*(ψₛ*ψ_unsat^-2);
+        ifelse(unsaturated, ∂θ∂ψ, zero(∂θ∂ψ))
+    end
 end
 
 inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ

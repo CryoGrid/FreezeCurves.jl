@@ -25,6 +25,13 @@ using Unitful
             @test f̃ ≈ f(b) - f(a)
         end
     end
+    @testset "VanGenuchten derivative (saturated and type-stable)" begin
+        f = VanGenuchten(α=2.0f0, n=1.5f0, vol=SoilWaterVolume(ρw=1000.0f0, θres=0.05f0, θsat=0.4f0))
+        ∂f∂ψ = FreezeCurves.derivative(f)
+        @test @inferred(∂f∂ψ(-0.5f0)) > 0.0f0
+        @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
+        @test @inferred(∂f∂ψ(1.0f0)) === 0.0f0
+    end
     @testset "VanGenuchten (units)" begin
         f = ustrip(VanGenuchten(α=0.02u"cm^-1", n=1.4))
         @test f.α == 2.0
@@ -51,5 +58,12 @@ using Unitful
             f̃, _ = quadgk(∂f∂ψ, a, b)
             @test f̃ ≈ f(b) - f(a)
         end
+    end
+    @testset "BrooksCorey derivative (saturated and type-stable)" begin
+        f = BrooksCorey(ψₛ=0.1f0, λ=0.5f0, vol=SoilWaterVolume(ρw=1000.0f0, θres=0.05f0, θsat=0.4f0))
+        ∂f∂ψ = FreezeCurves.derivative(f)
+        @test @inferred(∂f∂ψ(-0.5f0)) > 0.0f0
+        @test @inferred(∂f∂ψ(-0.05f0)) === 0.0f0
+        @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
     end
 end
