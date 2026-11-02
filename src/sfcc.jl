@@ -97,7 +97,7 @@ Base.@kwdef struct PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRC} <: SFCC
 end
 @inline function (f::PainterKarra)(
     T,
-    sat=1.0,
+    sat=one(T),
     ::Val{output}=Val{:θw}();
     θsat=f.swrc.vol.θsat,
     θres=f.swrc.vol.θres,
@@ -170,7 +170,7 @@ Base.@kwdef struct DallAmico{TFT,Tg,Tswrc<:SWRC} <: SFCC
 end
 @inline function (f::DallAmico)(
     T,
-    sat=1.0,
+    sat=one(T),
     ::Val{output}=Val{:θw}();
     θsat=f.swrc.vol.θsat,
     θres=f.swrc.vol.θres,
@@ -179,8 +179,8 @@ end
 ) where output
     # Dall'Amico is a special case of Painter-Karra with ω = β = 1
     pkfc = PainterKarra(freezethaw=f.freezethaw, g=f.g, swrc=f.swrc)
-    ω = 1.0
-    β = 1.0
+    ω = one(T)
+    β = one(T)
     return pkfc(T, sat, Val{output}(); θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
 function inflectionpoint(
@@ -212,7 +212,7 @@ end
 # DallAmico freeze curve with salt
 function (f::DallAmicoSalt)(
     T,
-    sat=1.0,
+    sat=one(T),
     ::Val{output}=Val{:θw}();
     θsat=f.swrc.vol.θsat,
     θres=f.swrc.vol.θres,
@@ -270,7 +270,7 @@ Base.@kwdef struct McKenzie{TFT,Tvol,Tγ} <: SFCC
 end
 function (f::McKenzie)(
     T,
-    sat=1.0;
+    sat=one(T);
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
@@ -297,7 +297,7 @@ Base.@kwdef struct Westermann{TFT,Tvol,Tδ} <: SFCC
 end
 function (f::Westermann)(
     T,
-    sat=1.0;
+    sat=one(T);
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
@@ -325,7 +325,7 @@ Base.@kwdef struct Langer{TFT,Tvol,Ta,Tb} <: SFCC
 end
 function (f::Langer)(
     T,
-    sat=1.0;
+    sat=one(T);
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
@@ -354,7 +354,7 @@ Base.@kwdef struct Hu2020{TFT,Tvol,Tb} <: SFCC
 end
 function (f::Hu2020)(
     T,
-    sat=1.0;
+    sat=one(T);
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     Tₘ=f.freezethaw.Tₘ,
@@ -383,7 +383,7 @@ Base.@kwdef struct PowerLaw{Tvol,Tα,Tβ} <: SFCC
 end
 function (f::PowerLaw)(
     T,
-    sat=1.0;
+    sat=one(T);
     θsat=f.vol.θsat,
     θres=f.vol.θres,
     α=f.α,

@@ -53,7 +53,10 @@ enthalpy(T, C, L, θw) = T*C + L*θw
 Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherwise, if `x` a general numeric type, does a heuristic check `x <= 200`
 and assumes the given temperature is in celsius if the condition is satisfied.
 """
-normalize_temperature(x) = x > 200.0 ? x : x + 273.15
+function normalize_temperature(x)
+    FT = typeof(float(x))
+    return x > FT(200) ? x : x + FT(273.15)
+end
 normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
 
 """
@@ -63,7 +66,7 @@ Differentiable implementation of heaviside step function, i.e:
 
 ``h(x) = \\begin{cases} 1 & x ≥ 0 \\\\ 0 & x < 0 \\end{cases}``
 """
-heaviside(x) = ifelse(x >= zero(x), 1.0, 0.0)
+heaviside(x) = ifelse(x >= zero(x), one(x), zero(one(x)))
 
 include("math.jl")
 

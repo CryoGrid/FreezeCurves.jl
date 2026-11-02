@@ -31,6 +31,10 @@ using Unitful
         @test @inferred(∂f∂ψ(-0.5f0)) > 0.0f0
         @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
         @test @inferred(∂f∂ψ(1.0f0)) === 0.0f0
+        # inverse in the number type of the arguments
+        @test @inferred(Base.inv(f)(0.2f0)) isa Float32
+        @test Base.inv(f)(0.2f0) ≈ Base.inv(f)(0.2)
+        @test @inferred(Base.inv(f)(0.4f0)) === 0.0f0
     end
     @testset "VanGenuchten (units)" begin
         f = ustrip(VanGenuchten(α=0.02u"cm^-1", n=1.4))

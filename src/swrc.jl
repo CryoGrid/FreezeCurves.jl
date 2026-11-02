@@ -92,8 +92,10 @@ function (f::VanGenuchten)(
     α=f.α,
     n=f.n
 )
-    let m = 1-1/n;
-        ifelse(θ < θsat, -1/α*(((θ-θres)/(θsat-θres))^(-1/m)-1.0)^(1/n), zero(1/α)*θ)
+    # one(r) instead of a Float64 literal, so that the result has the number type of the arguments
+    let m = 1-1/n,
+        r = (θ-θres)/(θsat-θres);
+        ifelse(θ < θsat, -1/α*(r^(-1/m)-one(r))^(1/n), zero(1/α)*θ)
     end
 end
 

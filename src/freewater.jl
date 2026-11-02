@@ -9,8 +9,9 @@ struct FreeWater <: FreezeCurve end
 
 # for backwards compatibility
 freewater(H, θtot, L) = freewater(H; θtot, L)
-function freewater(H; θtot=0.5, θres=0.0, L=3.34e8)
-    θtot = max(1e-8, θtot - θres)
+function freewater(H; θtot=0.5, θres=zero(θtot), L=3.34e8)
+    Δθ = float(θtot - θres)
+    θtot = max(oftype(Δθ, 1e-8), Δθ)
     Lθ = L*θtot
     θw = ifelse(
         H < zero(H),
@@ -27,4 +28,4 @@ function freewater(H; θtot=0.5, θres=0.0, L=3.34e8)
     )
     return (;θw, Lθ)
 end
-(freeW::FreeWater)(H; θtot, θres=0.0, L=3.34e8) = freewater(H; θtot, θres, L).θw
+(freeW::FreeWater)(H; θtot, θres=zero(θtot), L=3.34e8) = freewater(H; θtot, θres, L).θw
