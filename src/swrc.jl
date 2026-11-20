@@ -69,7 +69,7 @@ end
     VanGenuchten{Tvol,Tα,Tn} <: SWRC
 
 van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.
-    Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj 1980.03615995004400050002x.
+    Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj1980.03615995004400050002x.
 """
 Base.@kwdef struct VanGenuchten{Tvol,Tα,Tn} <: SWRC
     vol::Tvol = SoilWaterVolume()
@@ -137,8 +137,7 @@ VanGenuchten(::Val{:organic}) = VanGenuchten(α=0.013u"cm^-1", n=1.20, vol=SoilW
 """
     BrooksCorey{Twp,Tψₛ,Tλ} <: SWRC
 
-van Genuchten MT, 1980. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils.
-    Soil Science Society of America Journal, 44(5): 892–898. DOI: 10.2136/sssaj 1980.03615995004400050002x.
+R. H. Brooks and A. T. Corey. 1964. Hydraulic Properties of Porous Media and Their Relation to Drainage Design. Transactions of the ASAE, 7(1): 0026–0028. DOI: 10.13031/2013.40684
 """
 Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRC
     vol::Tvol = SoilWaterVolume()
