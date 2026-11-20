@@ -142,7 +142,7 @@ R. H. Brooks and A. T. Corey. 1964. Hydraulic Properties of Porous Media and The
 Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRC
     vol::Tvol = SoilWaterVolume()
     ψₛ::Tψₛ = 0.01u"m"
-    λ::Tλ = 0.2 # domain: (0,Inf)
+    λ::Tλ = 3.7 # domain: (0,Inf), default is for sandy soil
 end
 
 function (f::BrooksCorey)(
