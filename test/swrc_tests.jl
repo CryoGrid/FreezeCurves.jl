@@ -70,4 +70,15 @@ using Unitful
         @test @inferred(∂f∂ψ(-0.05f0)) === 0.0f0
         @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
     end
+    @testset "BrooksCorey presets" begin
+        textures = ["sand", "loamy sand", "sandy loam", "silt loam", "loam", "sandy clay loam",
+                    "silty clay loam", "sandy clay", "silty clay", "clay"]
+        for name in textures
+            f = BrooksCorey(name)
+            @test f == BrooksCorey(Symbol(replace(name, " " => "")))
+            @test 0 < f.λ < 1
+            @test f(-2 * f.ψₛ) < f.vol.θsat
+            @test f(-f.ψₛ / 2) == f.vol.θsat
+        end
+    end
 end

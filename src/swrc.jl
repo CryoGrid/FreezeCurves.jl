@@ -141,8 +141,8 @@ R. H. Brooks and A. T. Corey. 1964. Hydraulic Properties of Porous Media and The
 """
 Base.@kwdef struct BrooksCorey{Tvol,Tψₛ,Tλ} <: SWRC
     vol::Tvol = SoilWaterVolume()
-    ψₛ::Tψₛ = 0.05u"m" # air entry suction, default is for sandy soil
-    λ::Tλ = 0.2 # domain: (0,Inf)
+    ψₛ::Tψₛ = 0.01u"m" # air entry suction
+    λ::Tλ = 0.25 # domain: (0,Inf)
 end
 
 function (f::BrooksCorey)(
@@ -184,3 +184,20 @@ function (f::BrooksCorey)(
 end
 
 inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
+
+# Preset Brooks-Corey curves from soil types;
+# based on Table 2 of Clapp and Hornberger (1978) with λ = 1/b and no residual water content:
+# Clapp RB and Hornberger GM, 1978. Empirical equations for some soil hydraulic properties.
+#     Water Resources Research, 14(4): 601–604. DOI: 10.1029/WR014i004p00601.
+BrooksCorey(name::String) = BrooksCorey(Symbol(lowercase(replace(name, " " => ""))))
+BrooksCorey(name::Symbol) = BrooksCorey(Val{name}())
+BrooksCorey(::Val{:sand}) = BrooksCorey(ψₛ=12.1u"cm", λ=1/4.05, vol=SoilWaterVolume(θsat=0.395))
+BrooksCorey(::Val{:loamysand}) = BrooksCorey(ψₛ=9.0u"cm", λ=1/4.38, vol=SoilWaterVolume(θsat=0.410))
+BrooksCorey(::Val{:sandyloam}) = BrooksCorey(ψₛ=21.8u"cm", λ=1/4.90, vol=SoilWaterVolume(θsat=0.435))
+BrooksCorey(::Val{:siltloam}) = BrooksCorey(ψₛ=78.6u"cm", λ=1/5.30, vol=SoilWaterVolume(θsat=0.485))
+BrooksCorey(::Val{:loam}) = BrooksCorey(ψₛ=47.8u"cm", λ=1/5.39, vol=SoilWaterVolume(θsat=0.451))
+BrooksCorey(::Val{:sandyclayloam}) = BrooksCorey(ψₛ=29.9u"cm", λ=1/7.12, vol=SoilWaterVolume(θsat=0.420))
+BrooksCorey(::Val{:siltyclayloam}) = BrooksCorey(ψₛ=35.6u"cm", λ=1/7.75, vol=SoilWaterVolume(θsat=0.477))
+BrooksCorey(::Val{:sandyclay}) = BrooksCorey(ψₛ=15.3u"cm", λ=1/10.4, vol=SoilWaterVolume(θsat=0.426))
+BrooksCorey(::Val{:siltyclay}) = BrooksCorey(ψₛ=49.0u"cm", λ=1/10.4, vol=SoilWaterVolume(θsat=0.492))
+BrooksCorey(::Val{:clay}) = BrooksCorey(ψₛ=40.5u"cm", λ=1/11.4, vol=SoilWaterVolume(θsat=0.482))
