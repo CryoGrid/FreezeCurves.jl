@@ -8,4 +8,5 @@ using Unitful
     include("sfcc_tests.jl")
     include("solver_tests.jl")
     include("inference_tests.jl")
+    include("autodiff/runtests.jl")
 end
