@@ -34,7 +34,7 @@ function autodiff_cases()
         "PowerLaw: T" => (T -> ustrip(PowerLaw())(T; vol...), T₀),
         "PowerLaw: β" => (β -> ustrip(PowerLaw())(T₀; vol..., β), 0.5),
         "DallAmico: T" => (T -> ustrip(DallAmico())(T; vol...), T₀),
-        "DallAmico: sat" => (sat -> ustrip(DallAmico())(-0.05, sat; vol...), 0.8),
+        "DallAmico: sat" => (sat -> ustrip(DallAmico())(0.5, sat; vol...), 0.8),
         "DallAmico: α" => (α -> ustrip(DallAmico())(T₀; vol..., α, n=1.5), 2.0),
         "DallAmico: n" => (n -> ustrip(DallAmico())(T₀; vol..., α=2.0, n), 1.5),
         "DallAmico: Tₘ" => (Tₘ -> ustrip(DallAmico())(T₀; vol..., Tₘ), -0.1),
@@ -44,5 +44,11 @@ function autodiff_cases()
         "DallAmicoSalt: T" => (T -> ustrip(DallAmicoSalt())(T; vol...), -2.0),
         "DallAmicoSalt: saltconc" => (saltconc -> ustrip(DallAmicoSalt())(-2.0; vol..., saltconc), 500.0),
     ]
-    return vcat(swrc_cases, sfcc_cases)
+    # differentiability of the analytical SFCC derivatives ∂θw∂T themselves
+    freezecurves = (McKenzie(γ=0.5u"K"), Westermann(), Langer(), Hu2020(), PowerLaw(), DallAmico(), PainterKarra(β=1.0, ω=0.5))
+    sfcc_derivative_cases = [
+        "$(nameof(typeof(fc))) derivative: T" => (T -> FreezeCurves.derivative(ustrip(fc))(T; vol...), T₀) for fc in freezecurves
+    ]
+    push!(sfcc_derivative_cases, "DallAmicoSalt derivative: T" => (T -> FreezeCurves.derivative(ustrip(DallAmicoSalt()))(T; vol...), -2.0))
+    return vcat(swrc_cases, sfcc_cases, sfcc_derivative_cases)
 end

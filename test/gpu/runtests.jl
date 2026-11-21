@@ -43,7 +43,9 @@ end
     )
     @testset "SFCC: $(nameof(typeof(fc)))" for fc in freezecurves
         f = ustrip(fc)
+        ∂f∂T = FreezeCurves.derivative(f)
         test_gpu_map((T, sat, θsat) -> f(T, sat; θsat), T, sat, θsat)
+        test_gpu_map((T, sat, θsat) -> ∂f∂T(T, sat; θsat), T, sat, θsat)
     end
     @testset "SFCC with SWRC parameters: $(nameof(typeof(fc)))" for fc in (DallAmico(NF), PainterKarra(NF))
         f = ustrip(fc)

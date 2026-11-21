@@ -33,7 +33,7 @@ struct SFCCTable{F,I} <: SFCC
     f::F
     f_tab::I
 end
-(f::SFCCTable)(args...) = f.f_tab(args...)
+(f::SFCCTable)(T::Number, args...) = f.f_tab(T, args...)
 """
     Tabulated(f::SFCC, args...)
 
@@ -80,6 +80,17 @@ which computes the heat capacity from the unfrozen, total, and maximum (saturate
 end
 
 """
+    derivative(f::SFCC)
+
+Returns a function that evaluates the derivative `∂θw∂T` of the soil freezing characteristic curve `f` with respect
+to temperature, i.e. `derivative(f)(T, sat; kwargs...)` accepts the same arguments as `f(T, sat; kwargs...)`.
+"""
+derivative(f::SFCC) = Derivative(f)
+
+# fallback for freeze curves without an analytical derivative; note that this does not support units
+(f::SFCC)(::typeof(derivative), T::Number, args...; kwargs...) = ForwardDiff.derivative(T -> f(T, args...; kwargs...), T)
+
+"""
     PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRC} <: SFCC
 
 Painter SL, Karra S. Constitutive Model for Unfrozen Water Content in Subfreezing Unsaturated Soils. Vadose zone j. 2014 Apr;13(4):1-8.
@@ -93,7 +104,7 @@ Base.@kwdef struct PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRC} <: SFCC
 end
 PainterKarra(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, PainterKarra(; kwargs...))
 @inline function (f::PainterKarra)(
-    T,
+    T::Number,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
@@ -132,6 +143,31 @@ PainterKarra(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Pai
         end
     end
 end
+@inline function (f::PainterKarra)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    β=f.β,
+    ω=f.ω,
+    swrc_kwargs...
+)
+    # chain rule: ∂θw∂T = ∂θw∂ψ * ∂ψ∂T where ∂ψ∂T = β*Lsl/(g*Tstar) below Tstar and zero above
+    let θtot = θres + (θsat-θres)*sat,
+        ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
+        g = f.g,
+        Lsl = f.freezethaw.Lsl,
+        Tₘ = normalize_temperature(Tₘ),
+        T = normalize_temperature(T),
+        Tstar = Tₘ + ω*g*Tₘ/Lsl*ψ₀,
+        ∂ψ∂T = β*Lsl/(g*Tstar)*heaviside(Tstar-T),
+        ψ = ψ₀ + ∂ψ∂T*(T-Tstar),
+        ∂θw∂ψ = derivative(f.swrc)(ψ; θsat, θres, swrc_kwargs...);
+        return ∂θw∂ψ*∂ψ∂T
+    end
+end
 function inflectionpoint(
     f::PainterKarra,
     sat=1.0;
@@ -167,7 +203,7 @@ Base.@kwdef struct DallAmico{TFT,Tg,Tswrc<:SWRC} <: SFCC
 end
 DallAmico(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAmico(; kwargs...))
 @inline function (f::DallAmico)(
-    T,
+    T::Number,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
@@ -180,6 +216,20 @@ DallAmico(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAm
     ω = one(ustrip(T))
     β = one(ustrip(T))
     return pkfc(T, sat, Val{output}(); θsat, θres, Tₘ, ω, β, swrc_kwargs...)
+end
+@inline function (f::DallAmico)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    swrc_kwargs...
+)
+    pkfc = PainterKarra(freezethaw=f.freezethaw, g=f.g, swrc=f.swrc)
+    ω = one(ustrip(T))
+    β = one(ustrip(T))
+    return pkfc(derivative, T, sat; θsat, θres, Tₘ, ω, β, swrc_kwargs...)
 end
 function inflectionpoint(
     f::DallAmico,
@@ -210,7 +260,7 @@ end
 DallAmicoSalt(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAmicoSalt(; kwargs...))
 # DallAmico freeze curve with salt
 function (f::DallAmicoSalt)(
-    T,
+    T::Number,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
@@ -247,6 +297,36 @@ function (f::DallAmicoSalt)(
         end
     end
 end
+function (f::DallAmicoSalt)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    saltconc=f.saltconc,
+    swrc_kwargs...
+)
+    # chain rule: ∂θw∂T = ∂θw∂ψ * ∂ψ∂T where ∂ψ∂T is zero above Tstar and where ψ is clipped at zero
+    let θtot = θres + (θsat-θres)*sat,
+        ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
+        g = f.g,
+        R = f.R,
+        ρw = f.freezethaw.ρw,
+        Lsl = f.freezethaw.Lsl,
+        Lf = Lsl*ρw,
+        Tₘ = normalize_temperature(Tₘ),
+        T = normalize_temperature(T),
+        Tstar = Tₘ + Tₘ/Lf*(-R * saltconc * Tₘ),
+        ∂ψ∂T = Lf / (ρw * g * Tstar) * heaviside(Tstar-T),
+        ψ = ψ₀ + ∂ψ∂T * (T - Tstar),
+        unsaturated = ψ < zero(ψ),
+        ψ = ifelse(unsaturated, ψ, zero(ψ)),
+        ∂ψ∂T = ifelse(unsaturated, ∂ψ∂T, zero(∂ψ∂T)),
+        ∂θw∂ψ = derivative(f.swrc)(ψ; θsat, θres, swrc_kwargs...);
+        return ∂θw∂ψ*∂ψ∂T
+    end
+end
 # method dispatches for SWRC-based freeze curves
 swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
 
@@ -267,7 +347,7 @@ Base.@kwdef struct McKenzie{TFT,Tγ} <: SFCC
 end
 McKenzie(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, McKenzie(; kwargs...))
 function (f::McKenzie)(
-    T,
+    T::Number,
     sat=one(ustrip(T));
     θsat=0.5,
     θres=zero(θsat),
@@ -278,6 +358,23 @@ function (f::McKenzie)(
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
         return ifelse(T <= Tₘ, θres + (θtot-θres)*exp(-((T-Tₘ)/γ)^2), θtot*one(T))
+    end
+end
+function (f::McKenzie)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    γ=f.γ,
+)
+    let T = normalize_temperature(T),
+        Tₘ = normalize_temperature(Tₘ),
+        θtot = sat*θsat,
+        x = (T-Tₘ)/γ,
+        ∂θw∂T = -2*(θtot-θres)*x/γ*exp(-x^2);
+        return ifelse(T <= Tₘ, ∂θw∂T, zero(∂θw∂T))
     end
 end
 
@@ -294,7 +391,7 @@ Base.@kwdef struct Westermann{TFT,Tδ} <: SFCC
 end
 Westermann(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Westermann(; kwargs...))
 function (f::Westermann)(
-    T,
+    T::Number,
     sat=one(ustrip(T));
     θsat=0.5,
     θres=zero(θsat),
@@ -305,6 +402,24 @@ function (f::Westermann)(
         Tₘ = normalize_temperature(Tₘ),
         θtot = sat*θsat;
         return ifelse(T <= Tₘ, θres - (θtot-θres)*(δ/(T-Tₘ-δ)), θtot*one(T))
+    end
+end
+function (f::Westermann)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    δ=f.δ,
+)
+    # min guards against the singularity at T - Tₘ = δ in the unused (thawed) branch
+    let T = normalize_temperature(T),
+        Tₘ = normalize_temperature(Tₘ),
+        θtot = sat*θsat,
+        ΔT = min(T - Tₘ, zero(T - Tₘ)),
+        ∂θw∂T = (θtot-θres)*δ/(ΔT-δ)^2;
+        return ifelse(T <= Tₘ, ∂θw∂T, zero(∂θw∂T))
     end
 end
 
@@ -322,7 +437,26 @@ Base.@kwdef struct Langer{TFT,Ta,Tb} <: SFCC
 end
 Langer(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Langer(; kwargs...))
 function (f::Langer)(
-    T,
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    a=f.a,
+    b=f.b,
+)
+    # min guards against roots of the polynomial above the melting point in the unused (thawed) branch
+    let Tₘ = normalize_temperature(Tₘ),
+        # convert to dimensionless temperature difference from the melting point
+        ΔT = (normalize_temperature(T) - Tₘ) / oneunit(Tₘ),
+        ΔT_frozen = min(ΔT, zero(ΔT)),
+        θtot = sat*θsat;
+        return ifelse(ΔT <= zero(ΔT), θres + (θtot-θres)*(1 - a*ΔT_frozen + b*ΔT_frozen^2)^-1, θtot*one(ΔT))
+    end
+end
+function (f::Langer)(
+    ::typeof(derivative),
+    T::Number,
     sat=one(ustrip(T));
     θsat=0.5,
     θres=zero(θsat),
@@ -331,10 +465,12 @@ function (f::Langer)(
     b=f.b,
 )
     let Tₘ = normalize_temperature(Tₘ),
-        # convert to dimensionless °C
-        T = (normalize_temperature(T) - Tₘ) / oneunit(Tₘ),
-        θtot = sat*θsat;
-        return ifelse(T <= Tₘ / oneunit(Tₘ), θres + (θtot-θres)*(1 - a*T + b*T^2)^-1, θtot*one(T))
+        ΔT = (normalize_temperature(T) - Tₘ) / oneunit(Tₘ),
+        ΔT_frozen = min(ΔT, zero(ΔT)),
+        θtot = sat*θsat,
+        p = 1 - a*ΔT_frozen + b*ΔT_frozen^2,
+        ∂θw∂T = -(θtot-θres)*(2*b*ΔT_frozen - a)/p^2/oneunit(Tₘ);
+        return ifelse(ΔT <= zero(ΔT), ∂θw∂T, zero(∂θw∂T))
     end
 end
 
@@ -351,7 +487,7 @@ Base.@kwdef struct Hu2020{TFT,Tb} <: SFCC
 end
 Hu2020(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Hu2020(; kwargs...))
 function (f::Hu2020)(
-    T,
+    T::Number,
     sat=one(ustrip(T));
     θsat=0.5,
     θres=zero(θsat),
@@ -364,6 +500,26 @@ function (f::Hu2020)(
         # ifelse evaluates both branches, so we use max to guard against the case where T < Tₘ
         ΔT = max(Tₘ - T, zero(T))
         return ifelse(T <= Tₘ, θres + (θtot-θres)*(1 - (ΔT / Tₘ)^b), θtot*one(T))
+    end
+end
+function (f::Hu2020)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    Tₘ=f.freezethaw.Tₘ,
+    b=f.b,
+)
+    # the derivative is singular at T = Tₘ for b < 1, so we evaluate the frozen branch at a safe ΔT
+    # where T ≥ Tₘ and return the (zero) derivative of the thawed branch there
+    let T = normalize_temperature(T),
+        Tₘ = normalize_temperature(Tₘ),
+        θtot = sat*θsat,
+        frozen = T < Tₘ,
+        ΔT = ifelse(frozen, Tₘ - T, Tₘ / 2),
+        ∂θw∂T = (θtot-θres)*b*(ΔT / Tₘ)^(b-1) / Tₘ;
+        return ifelse(frozen, ∂θw∂T, zero(∂θw∂T))
     end
 end
 
@@ -380,7 +536,7 @@ Base.@kwdef struct PowerLaw{Tα,Tβ} <: SFCC
 end
 PowerLaw(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, PowerLaw(; kwargs...))
 function (f::PowerLaw)(
-    T,
+    T::Number,
     sat=one(ustrip(T));
     θsat=0.5,
     θres=zero(θsat),
@@ -391,6 +547,25 @@ function (f::PowerLaw)(
         Tₘ = ustrip(normalize_temperature(-α^(1/β))),
         θtot = sat*θsat;
         return ifelse(T < Tₘ, θres + (θtot-θres)*(α*abs(T - Tₘ)^(-β)), θtot*one(T))
+    end
+end
+function (f::PowerLaw)(
+    ::typeof(derivative),
+    T::Number,
+    sat=one(ustrip(T));
+    θsat=0.5,
+    θres=zero(θsat),
+    α=f.α,
+    β=f.β,
+)
+    # evaluate the frozen branch at a safe ΔT where T ≥ Tₘ to avoid the singularity at T = Tₘ
+    let T = ustrip(normalize_temperature(T)),
+        Tₘ = ustrip(normalize_temperature(-α^(1/β))),
+        θtot = sat*θsat,
+        frozen = T < Tₘ,
+        ΔT = ifelse(frozen, Tₘ - T, one(T)),
+        ∂θw∂T = (θtot-θres)*α*β*ΔT^(-β-1);
+        return ifelse(frozen, ∂θw∂T, zero(∂θw∂T))
     end
 end
 

@@ -39,3 +39,34 @@ stripunits(x::TemperatureQuantity) = ustrip(x)
 # convert the number type of x to NF while preserving units
 convert_numtype(::Type{NF}, x::Number) where {NF<:Number} = convert(NF, x)
 convert_numtype(::Type{NF}, x::Quantity) where {NF<:Number} = convert(NF, ustrip(x))*unit(x)
+
+"""
+    derivative(f)
+
+Returns a function that evaluates the derivative of the curve `f` with respect to its first argument,
+i.e. `∂θ∂ψ` for a soil water retention curve or `∂θw∂T` for a soil freezing characteristic curve.
+"""
+function derivative end
+
+"""
+    Inverse{F}
+
+Callable wrapper that evaluates the inverse of the curve `f`, i.e. `f(inv, args...; kwargs...)`.
+A callable struct is used instead of a closure so that it can be differentiated by Zygote.
+"""
+struct Inverse{F}
+    f::F
+end
+(g::Inverse)(args...; kwargs...) = g.f(inv, args...; kwargs...)
+
+"""
+    Derivative{F}
+
+Callable wrapper that evaluates the derivative of the curve `f` with respect to its first argument,
+i.e. `f(derivative, args...; kwargs...)`. A callable struct is used instead of a closure so that it
+can be differentiated by Zygote.
+"""
+struct Derivative{F}
+    f::F
+end
+(g::Derivative)(args...; kwargs...) = g.f(derivative, args...; kwargs...)

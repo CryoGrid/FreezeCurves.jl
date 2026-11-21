@@ -16,41 +16,18 @@ Base type for soil water retention curves (SWRC) which relate soil water matric 
 abstract type SWRC end
 
 """
-    SWRCInverse{F<:SWRC}
-
-Callable wrapper that evaluates the inverse of the soil water retention curve `f`, i.e. `f(inv, args...; kwargs...)`.
-A callable struct is used instead of a closure so that it can be differentiated by Zygote.
-"""
-struct SWRCInverse{F<:SWRC}
-    f::F
-end
-(g::SWRCInverse)(args...; kwargs...) = g.f(inv, args...; kwargs...)
-
-"""
-    SWRCDerivative{F<:SWRC}
-
-Callable wrapper that evaluates the derivative `∂f∂ψ` of the soil water retention curve `f`, i.e.
-`f(derivative, args...; kwargs...)`. A callable struct is used instead of a closure so that it can be
-differentiated by Zygote.
-"""
-struct SWRCDerivative{F<:SWRC}
-    f::F
-end
-(g::SWRCDerivative)(args...; kwargs...) = g.f(derivative, args...; kwargs...)
-
-"""
     Base.inv(f::SWRC)
 
 Returns a function that evaluates the inverse of the soil water retention curve, `f`.
 """
-Base.inv(f::SWRC) = SWRCInverse(f)
+Base.inv(f::SWRC) = Inverse(f)
 
 """
     derivative(f::SWRC)
 
 Returns a function that evaluates the derivative `∂f∂ψ` of the soil water retention curve, `f`.
 """
-derivative(f::SWRC) = SWRCDerivative(f)
+derivative(f::SWRC) = Derivative(f)
 
 """
     inflectionpoint(f::SWRC)

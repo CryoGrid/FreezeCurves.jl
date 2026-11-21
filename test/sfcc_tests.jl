@@ -1,6 +1,11 @@
 using FreezeCurves
+using ForwardDiff
 using Test
 using Unitful
+
+# user-defined freeze curve without an analytical derivative for testing the ForwardDiff fallback
+struct ExponentialCurve <: FreezeCurves.SFCC end
+(f::ExponentialCurve)(T::Number, sat=one(T); θsat=0.5) = θsat*sat*exp(T)
 
 @testset "SFCC" begin
     @testset "McKenzie" begin
@@ -127,6 +132,30 @@ using Unitful
         for fc in (McKenzie(Float32), Westermann(Float32), Langer(Float32), Hu2020(Float32), PowerLaw(Float32), DallAmico(Float32), PainterKarra(Float32))
             f = ustrip(fc)
             @test @inferred(f(-1.0f0, 1.0f0; θsat=0.4f0)) isa Float32
+        end
+    end
+    @testset "Langer above the melting point" begin
+        f = Langer()
+        @test f(1.0u"°C"; θsat=0.5) == 0.5
+        @test f(5.0u"°C"; θsat=0.5) == 0.5
+    end
+    @testset "Derivatives" begin
+        freezecurves = (McKenzie(), Westermann(), Langer(), Hu2020(), PowerLaw(), DallAmico(), PainterKarra(β=1.0, ω=0.5), DallAmicoSalt())
+        @testset "$(nameof(typeof(fc)))" for fc in freezecurves
+            f = ustrip(fc)
+            ∂f∂T = FreezeCurves.derivative(f)
+            for T in (-5.0, -0.5, -0.05, -0.001, 0.5, 2.0)
+                @test ∂f∂T(T, 0.9; θsat=0.4, θres=0.05) ≈ ForwardDiff.derivative(T -> f(T, 0.9; θsat=0.4, θres=0.05), T) atol=1e-12
+            end
+            f32 = ustrip(typeof(fc).name.wrapper(Float32))
+            @test @inferred(FreezeCurves.derivative(f32)(-0.5f0, 0.9f0; θsat=0.4f0)) isa Float32
+        end
+        @testset "Units" begin
+            @test unit(upreferred(FreezeCurves.derivative(McKenzie())(-0.1u"°C"; θsat=0.4))) == u"K^-1"
+            @test unit(upreferred(FreezeCurves.derivative(DallAmico())(-0.1u"°C"; θsat=0.4))) == u"K^-1"
+        end
+        @testset "ForwardDiff fallback" begin
+            @test FreezeCurves.derivative(ExponentialCurve())(-1.0, 1.0; θsat=0.4) ≈ 0.4*exp(-1.0)
         end
     end
 end
