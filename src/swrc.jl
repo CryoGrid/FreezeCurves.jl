@@ -16,18 +16,41 @@ Base type for soil water retention curves (SWRC) which relate soil water matric 
 abstract type SWRC end
 
 """
+    SWRCInverse{F<:SWRC}
+
+Callable wrapper that evaluates the inverse of the soil water retention curve `f`, i.e. `f(inv, args...; kwargs...)`.
+A callable struct is used instead of a closure so that it can be differentiated by Zygote.
+"""
+struct SWRCInverse{F<:SWRC}
+    f::F
+end
+(g::SWRCInverse)(args...; kwargs...) = g.f(inv, args...; kwargs...)
+
+"""
+    SWRCDerivative{F<:SWRC}
+
+Callable wrapper that evaluates the derivative `∂f∂ψ` of the soil water retention curve `f`, i.e.
+`f(derivative, args...; kwargs...)`. A callable struct is used instead of a closure so that it can be
+differentiated by Zygote.
+"""
+struct SWRCDerivative{F<:SWRC}
+    f::F
+end
+(g::SWRCDerivative)(args...; kwargs...) = g.f(derivative, args...; kwargs...)
+
+"""
     Base.inv(f::SWRC)
 
 Returns a function that evaluates the inverse of the soil water retention curve, `f`.
 """
-Base.inv(f::SWRC) = (args...; kwargs...) -> f(inv, args...; kwargs...)
+Base.inv(f::SWRC) = SWRCInverse(f)
 
 """
     derivative(f::SWRC)
 
 Returns a function that evaluates the derivative `∂f∂ψ` of the soil water retention curve, `f`.
 """
-derivative(f::SWRC) = (args...; kwargs...) -> f(derivative, args...; kwargs...)
+derivative(f::SWRC) = SWRCDerivative(f)
 
 """
     inflectionpoint(f::SWRC)
@@ -78,10 +101,14 @@ function (f::VanGenuchten)(
     α=f.α,
     n=f.n
 )
-    # one(r) instead of a Float64 literal, so that the result has the number type of the arguments
+    # evaluate the unsaturated branch at r = 1/2 where saturated (θ ≥ θsat), so that neither branch involves
+    # powers of zero, which give NaN adjoints in reverse mode AD; one(r) instead of a Float64 literal, so that
+    # the result has the number type of the arguments
     let m = 1-1/n,
-        r = (θ-θres)/(θsat-θres);
-        ifelse(θ < θsat, -1/α*(r^(-1/m)-one(r))^(1/n), zero(1/α)*θ)
+        unsaturated = θ < θsat,
+        r = (θ-θres)/(θsat-θres),
+        r_unsat = ifelse(unsaturated, r, one(r)/2);
+        ifelse(unsaturated, -1/α*(r_unsat^(-1/m)-one(r))^(1/n), zero(1/α)*θ)
     end
 end
 
@@ -140,9 +167,11 @@ function (f::BrooksCorey)(
     λ=f.λ
 )
     # evaluate the unsaturated branch below the air entry potential -ψₛ where saturated, since ifelse
-    # evaluates both branches and fractional powers of negative numbers throw a DomainError
-    let unsaturated = ψ < -ψₛ,
-        ψ_unsat = ifelse(unsaturated, ψ, oftype(ψ, -ψₛ - oneunit(ψ)));
+    # evaluates both branches and fractional powers of negative numbers throw a DomainError;
+    # ψ and ψₛ are promoted so that both branches have the same type (e.g. for dual numbers or mixed units)
+    let (ψ, ψₛ) = promote(ψ, ψₛ),
+        unsaturated = ψ < -ψₛ,
+        ψ_unsat = ifelse(unsaturated, ψ, -ψₛ - oneunit(ψ));
         ifelse(unsaturated, θres + (θsat - θres)*(-ψₛ / ψ_unsat)^λ, θsat*one(ψ))
     end
 end
@@ -167,9 +196,10 @@ function (f::BrooksCorey)(
     λ=f.λ
 )
     # evaluate the unsaturated branch below the air entry potential -ψₛ where saturated, and return a zero
-    # derivative of the same type there
-    let unsaturated = ψ < -ψₛ,
-        ψ_unsat = ifelse(unsaturated, ψ, oftype(ψ, -ψₛ - oneunit(ψ))),
+    # derivative of the same type there; ψ and ψₛ are promoted so that both branches have the same type
+    let (ψ, ψₛ) = promote(ψ, ψₛ),
+        unsaturated = ψ < -ψₛ,
+        ψ_unsat = ifelse(unsaturated, ψ, -ψₛ - oneunit(ψ)),
         ∂θ∂ψ = (θsat - θres)*λ*(-ψₛ / ψ_unsat)^(λ-1)*(ψₛ*ψ_unsat^-2);
         ifelse(unsaturated, ∂θ∂ψ, zero(∂θ∂ψ))
     end
