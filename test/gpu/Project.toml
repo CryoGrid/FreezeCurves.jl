@@ -1,0 +1,7 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+FreezeCurves = "71e4ad71-e4f2-45a3-aa0a-91ffaa9676be"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+FreezeCurves = {path = "../.."}
