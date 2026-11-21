@@ -97,7 +97,7 @@ PainterKarra(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Pai
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -136,7 +136,7 @@ function inflectionpoint(
     f::PainterKarra,
     sat=1.0;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -171,7 +171,7 @@ DallAmico(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAm
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where output
@@ -185,7 +185,7 @@ function inflectionpoint(
     f::DallAmico,
     sat=1.0;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 )
@@ -214,7 +214,7 @@ function (f::DallAmicoSalt)(
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     swrc_kwargs...
@@ -270,7 +270,7 @@ function (f::McKenzie)(
     T,
     sat=one(ustrip(T));
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     γ=f.γ,
 )
@@ -297,7 +297,7 @@ function (f::Westermann)(
     T,
     sat=one(ustrip(T));
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     δ=f.δ,
 )
@@ -325,7 +325,7 @@ function (f::Langer)(
     T,
     sat=one(ustrip(T));
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     a=f.a,
     b=f.b,
@@ -354,7 +354,7 @@ function (f::Hu2020)(
     T,
     sat=one(ustrip(T));
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     Tₘ=f.freezethaw.Tₘ,
     b=f.b,
 )
@@ -383,7 +383,7 @@ function (f::PowerLaw)(
     T,
     sat=one(ustrip(T));
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     α=f.α,
     β=f.β,
 )

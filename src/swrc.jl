@@ -37,11 +37,11 @@ Returns the analytical solution for the inflection point (i.e. where ∂²θ/∂
 inflectionpoint(f::SWRC) = error("not implemented for $f")
 
 """
-    waterpotential(f::SWRC, θ; θsat=0.5, θres=0.0, kwargs...)
+    waterpotential(f::SWRC, θ; θsat=0.5, θres=zero(θsat), kwargs...)
 
 Returns the water potential at volumetric water content `θ` by evaluating the inverse of `f`.
 """
-function waterpotential(f::SWRC, θ; θsat=0.5, θres=0.0, kwargs...)
+function waterpotential(f::SWRC, θ; θsat=0.5, θres=zero(θsat), kwargs...)
     let θsat = max(θ, θsat);
         f(inv, θ; θsat, θres, kwargs...)
     end
@@ -58,11 +58,15 @@ Base.@kwdef struct VanGenuchten{Tα,Tn} <: SWRC
     n::Tn = 2.0 # domain: (1,Inf)
 end
 VanGenuchten(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, VanGenuchten(; kwargs...))
-function (f::VanGenuchten)(ψ; θsat=0.5, θres=0.0, α=f.α, n=f.n)
+function (f::VanGenuchten)(ψ; θsat=0.5, θres=zero(θsat), α=f.α, n=f.n)
+    # evaluate the unsaturated branch at a negative potential where saturated (ψ ≥ 0), since ifelse
+    # evaluates both branches and fractional powers of negative numbers throw a DomainError
     let m = 1-1/n,
-        x = 1 + (-α*ψ)^n;
+        unsaturated = ψ < zero(ψ),
+        ψ_unsat = ifelse(unsaturated, ψ, -oneunit(ψ)),
+        x = 1 + (-α*ψ_unsat)^n;
         # @assert isnan(x) || x > zero(x) "van Genuchten violated constraint $x > 0 with input $ψ and parameters θsat=$θsat, θres=$θres, α=$α, n=$n"
-        ifelse(ψ < zero(ψ), θres + (θsat - θres)*x^(-m), θsat*one(ψ))
+        ifelse(unsaturated, θres + (θsat - θres)*x^(-m), θsat*one(ψ))
     end
 end
 
@@ -70,7 +74,7 @@ function (f::VanGenuchten)(
     ::typeof(inv),
     θ;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     α=f.α,
     n=f.n
 )
@@ -85,7 +89,7 @@ function (f::VanGenuchten)(
     ::typeof(derivative),
     ψ;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     α=f.α,
     n=f.n
 )
@@ -131,18 +135,23 @@ BrooksCorey(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Broo
 function (f::BrooksCorey)(
     ψ;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     ψₛ=f.ψₛ,
     λ=f.λ
 )
-    ifelse(ψ < -ψₛ, θres + (θsat - θres)*(-ψₛ / ψ)^λ, θsat*one(ψ))
+    # evaluate the unsaturated branch below the air entry potential -ψₛ where saturated, since ifelse
+    # evaluates both branches and fractional powers of negative numbers throw a DomainError
+    let unsaturated = ψ < -ψₛ,
+        ψ_unsat = ifelse(unsaturated, ψ, oftype(ψ, -ψₛ - oneunit(ψ)));
+        ifelse(unsaturated, θres + (θsat - θres)*(-ψₛ / ψ_unsat)^λ, θsat*one(ψ))
+    end
 end
 
 function (f::BrooksCorey)(
     ::typeof(inv),
     θ;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     ψₛ=f.ψₛ,
     λ=f.λ,
 )
@@ -153,7 +162,7 @@ function (f::BrooksCorey)(
     ::typeof(derivative),
     ψ;
     θsat=0.5,
-    θres=0.0,
+    θres=zero(θsat),
     ψₛ=f.ψₛ,
     λ=f.λ
 )

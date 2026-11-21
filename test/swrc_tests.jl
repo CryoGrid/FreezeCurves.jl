@@ -74,6 +74,20 @@ using Unitful
         @test @inferred(∂f∂ψ(-0.05f0; θsat, θres)) === 0.0f0
         @test @inferred(∂f∂ψ(0.0f0; θsat, θres)) === 0.0f0
     end
+    @testset "Saturated and positive potentials" begin
+        for f in (VanGenuchten(), BrooksCorey())
+            @test f(0.0u"m") == 0.5
+            @test f(0.5u"m") == 0.5
+            @test FreezeCurves.derivative(f)(0.5u"m") == 0.0u"m^-1"
+        end
+    end
+    @testset "Number type of keyword defaults" begin
+        for f in (ustrip(VanGenuchten(Float32)), ustrip(BrooksCorey(Float32)))
+            # θres defaults to zero(θsat) so that passing only θsat preserves the number type
+            @test @inferred(f(-1.0f0; θsat=0.4f0)) isa Float32
+            @test @inferred(f(-1.0f0; watercontent(Float32)...)) isa Float32
+        end
+    end
     @testset "VanGenuchten presets" begin
         textures = ["sand", "sandy loam", "silt loam", "sandy clay loam", "silt", "sandy clay",
                     "silty clay", "clay", "organic"]

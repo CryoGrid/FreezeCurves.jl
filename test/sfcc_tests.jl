@@ -123,4 +123,10 @@ using Unitful
             @test Tstar == res.Tstar
         end
     end
+    @testset "Number type of keyword defaults" begin
+        for fc in (McKenzie(Float32), Westermann(Float32), Langer(Float32), Hu2020(Float32), PowerLaw(Float32), DallAmico(Float32), PainterKarra(Float32))
+            f = ustrip(fc)
+            @test @inferred(f(-1.0f0, 1.0f0; θsat=0.4f0)) isa Float32
+        end
+    end
 end
