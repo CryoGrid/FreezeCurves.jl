@@ -29,9 +29,9 @@ function __init__()
     end
 end
 
-# convenience constants for temperature unit/quantity types
-const TemperatureUnit{N,A} = Unitful.FreeUnits{N,Unitful.𝚯,A} where {N,A}
-const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:TemperatureUnit}
+include("utils.jl")
+
+include("math.jl")
 
 """
     FreezeCurve
@@ -39,36 +39,6 @@ const TemperatureQuantity{T,U} = Quantity{T,Unitful.𝚯,U} where {T,U<:Temperat
 Base type for freezing characteristic curves which relate temperature or enthalpy to unfrozen water content.
 """
 abstract type FreezeCurve end
-
-"""
-    enthalpy(T, C, L, θw)
-
-Computes the volumetric enthalpy [J/m^3] given T, C, L, θw.
-"""
-enthalpy(T, C, L, θw) = T*C + L*θw
-"""
-    normalize_temperature(x)
-    normalize_temperature(x::TemperatureQuantity)
-
-Converts temperature `x` to Kelvin. If `x` has units, `uconvert` is used. Otherwise, if `x` a general numeric type, does a heuristic check `x <= 200`
-and assumes the given temperature is in celsius if the condition is satisfied.
-"""
-function normalize_temperature(x)
-    FT = typeof(float(x))
-    return x > FT(200) ? x : x + FT(273.15)
-end
-normalize_temperature(x::TemperatureQuantity) = uconvert(u"K", x)
-
-"""
-    heaviside(x)
-
-Differentiable implementation of heaviside step function, i.e:
-
-``h(x) = \\begin{cases} 1 & x ≥ 0 \\\\ 0 & x < 0 \\end{cases}``
-"""
-heaviside(x) = ifelse(x >= zero(x), one(x), zero(one(x)))
-
-include("math.jl")
 
 export FreeWater
 include("freewater.jl")
@@ -85,12 +55,6 @@ include("sfcc.jl")
 include("sfccsolvers/solvers.jl")
 
 # Extra utilities
-
-# strip units and conver
-stripunits(x::Number) = x
-stripunits(x::Quantity) = ustrip(upreferred(x))
-stripunits(x::TemperatureQuantity) = ustrip(x)
-
 """
     ustrip(x)
 
