@@ -57,6 +57,7 @@ Base.@kwdef struct VanGenuchten{Tα,Tn} <: SWRC
     α::Tα = 1.0u"1/m" # domain: (0,Inf)
     n::Tn = 2.0 # domain: (1,Inf)
 end
+VanGenuchten(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, VanGenuchten(; kwargs...))
 function (f::VanGenuchten)(ψ; θsat=0.5, θres=0.0, α=f.α, n=f.n)
     let m = 1-1/n,
         x = 1 + (-α*ψ)^n;
@@ -105,6 +106,7 @@ inflectionpoint(f::VanGenuchten; α=f.α, n=f.n) = -1/α*((n - 1) / n)^(1/n)
 # based on Carsel and Parrish (1988) but with maximum 5% residual water content
 VanGenuchten(name::String) = VanGenuchten(Symbol(lowercase(replace(name, " " => ""))))
 VanGenuchten(name::Symbol) = VanGenuchten(Val{name}())
+VanGenuchten(::Type{NF}, name::Union{String,Symbol}) where {NF<:Number} = convert_numtype(NF, VanGenuchten(name))
 VanGenuchten(::Val{:sand}) = VanGenuchten(α=0.074u"cm^-1", n=2.96)
 VanGenuchten(::Val{:sandyloam}) = VanGenuchten(α=0.075u"cm^-1", n=2.28)
 VanGenuchten(::Val{:siltloam}) = VanGenuchten(α=0.02u"cm^-1", n=1.41)
@@ -124,6 +126,7 @@ Base.@kwdef struct BrooksCorey{Tψₛ,Tλ} <: SWRC
     ψₛ::Tψₛ = 0.01u"m" # air entry suction
     λ::Tλ = 0.25 # domain: (0,Inf)
 end
+BrooksCorey(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, BrooksCorey(; kwargs...))
 
 function (f::BrooksCorey)(
     ψ;
@@ -171,6 +174,7 @@ inflectionpoint(f::BrooksCorey; ψₛ=f.ψₛ) = ψₛ
 #     Water Resources Research, 14(4): 601–604. DOI: 10.1029/WR014i004p00601.
 BrooksCorey(name::String) = BrooksCorey(Symbol(lowercase(replace(name, " " => ""))))
 BrooksCorey(name::Symbol) = BrooksCorey(Val{name}())
+BrooksCorey(::Type{NF}, name::Union{String,Symbol}) where {NF<:Number} = convert_numtype(NF, BrooksCorey(name))
 BrooksCorey(::Val{:sand}) = BrooksCorey(ψₛ=12.1u"cm", λ=1/4.05)
 BrooksCorey(::Val{:loamysand}) = BrooksCorey(ψₛ=9.0u"cm", λ=1/4.38)
 BrooksCorey(::Val{:sandyloam}) = BrooksCorey(ψₛ=21.8u"cm", λ=1/4.90)

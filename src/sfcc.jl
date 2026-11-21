@@ -50,6 +50,7 @@ Base.@kwdef struct SoilFreezeThawProperties{TTₘ,TLsl,Tρw}
     Lsl::TLsl = 3.34e5u"J/kg" # specific latent heat of fusion of water
     ρw::Tρw = 1000.0u"kg/m^3" # density of water
 end
+SoilFreezeThawProperties(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, SoilFreezeThawProperties(; kwargs...))
 """
     SoilFreezeThawProperties(f::SFCC)
 
@@ -90,6 +91,7 @@ Base.@kwdef struct PainterKarra{TFT,Tβ,Tω,Tg,Tswrc<:SWRC} <: SFCC
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
+PainterKarra(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, PainterKarra(; kwargs...))
 @inline function (f::PainterKarra)(
     T,
     sat=one(ustrip(T)),
@@ -163,6 +165,7 @@ Base.@kwdef struct DallAmico{TFT,Tg,Tswrc<:SWRC} <: SFCC
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
+DallAmico(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAmico(; kwargs...))
 @inline function (f::DallAmico)(
     T,
     sat=one(ustrip(T)),
@@ -204,6 +207,7 @@ Base.@kwdef struct DallAmicoSalt{TFT,Tsc,TR,Tg,Tswrc<:SWRC} <: SFCC
     g::Tg = 9.80665u"m/s^2" # acceleration due to gravity
     swrc::Tswrc = VanGenuchten() # soil water retention curve
 end
+DallAmicoSalt(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, DallAmicoSalt(; kwargs...))
 # DallAmico freeze curve with salt
 function (f::DallAmicoSalt)(
     T,
@@ -261,6 +265,7 @@ Base.@kwdef struct McKenzie{TFT,Tγ} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
     γ::Tγ = 0.1u"K" # domain (0,Inf)
 end
+McKenzie(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, McKenzie(; kwargs...))
 function (f::McKenzie)(
     T,
     sat=one(ustrip(T));
@@ -287,6 +292,7 @@ Base.@kwdef struct Westermann{TFT,Tδ} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
     δ::Tδ = 0.1u"K" # domain: (0,Inf)
 end
+Westermann(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Westermann(; kwargs...))
 function (f::Westermann)(
     T,
     sat=one(ustrip(T));
@@ -314,6 +320,7 @@ Base.@kwdef struct Langer{TFT,Ta,Tb} <: SFCC
     a::Ta = 19.0
     b::Tb = 4.0
 end
+Langer(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Langer(; kwargs...))
 function (f::Langer)(
     T,
     sat=one(ustrip(T));
@@ -342,6 +349,7 @@ Base.@kwdef struct Hu2020{TFT,Tb} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
     b::Tb = 0.01
 end
+Hu2020(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, Hu2020(; kwargs...))
 function (f::Hu2020)(
     T,
     sat=one(ustrip(T));
@@ -370,6 +378,7 @@ Base.@kwdef struct PowerLaw{Tα,Tβ} <: SFCC
     α::Tα = 0.01
     β::Tβ = 0.5
 end
+PowerLaw(::Type{NF}; kwargs...) where {NF<:Number} = convert_numtype(NF, PowerLaw(; kwargs...))
 function (f::PowerLaw)(
     T,
     sat=one(ustrip(T));

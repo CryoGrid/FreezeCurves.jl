@@ -63,6 +63,17 @@ to preferred SI units before being stripped.
 """
 ustrip(x::Union{SFCC,SWRC}) = Flatten.reconstruct(x, map(stripunits, Flatten.flatten(x, Flatten.flattenable, Number)), Number)
 
+"""
+    convert_numtype(::Type{NF}, x::Union{SFCC,SWRC,SoilFreezeThawProperties}) where {NF<:Number}
+
+Reconstructs the type or function `x` with all numerical quantities (including those in nested structs)
+converted to the number type `NF`. Units are preserved.
+"""
+function convert_numtype(::Type{NF}, x::Union{SFCC,SWRC,SoilFreezeThawProperties}) where {NF<:Number}
+    values = map(Base.Fix1(convert_numtype, NF), Flatten.flatten(x, Flatten.flattenable, Number))
+    return Flatten.reconstruct(x, values, Number)
+end
+
 include("plotting.jl")
 
 end
