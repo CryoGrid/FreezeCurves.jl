@@ -18,7 +18,7 @@ export FreezeCurve
 function __init__()
     @require Turing="fce5fe82-541a-59a6-adf8-730c64b5f9a0" begin
         using .Turing, .Turing.Distributions
-        export SFCCModel, sfccpriors
+        export SFCCModel, sfccpriors, swvpriors
         include("inference/inference.jl")
     end
     # require NonlinearSolve.jl for generic nonlinear solver
@@ -73,7 +73,7 @@ include("math.jl")
 export FreeWater
 include("freewater.jl")
 
-export SWRC, SoilWaterVolume, BrooksCorey, VanGenuchten
+export SWRC, BrooksCorey, VanGenuchten, watercontent
 export inflectionpoint
 include("swrc.jl")
 

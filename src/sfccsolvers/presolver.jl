@@ -53,7 +53,7 @@ end
 Initializes this `SFCCPreSolver` by building interpolants for `fc` and its derivatives. `θtot` and `θsat` are assumed fixed.
 `hc` must be heat capacity as a function of liquid water content.
 """
-function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc::F; sat=1.0, θsat=SoilWaterVolume(fc).θsat, fc_kwargs...) where {F}
+function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc::F; sat=1.0, θsat=0.5, fc_kwargs...) where {F}
     if solver.cache.initialized && !solver.reinit
         # skip re-initialization
         return nothing
@@ -65,7 +65,7 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCache1D}, fc::SFCC, hc
     let Tmin = solver.Tmin,
         Tmax = SoilFreezeThawProperties(fc).Tₘ,
         Lsl = SoilFreezeThawProperties(fc).Lsl,
-        ρw = SoilWaterVolume(fc).ρw,
+        ρw = SoilFreezeThawProperties(fc).ρw,
         L = ρw*Lsl,
         f_kwargs = (; θsat, fc_kwargs...),
         f(T) = fc(T, sat; f_kwargs...),
@@ -137,7 +137,7 @@ function sfccsolve(
     ::Val{return_all}=Val{true}()
 ) where {return_all}
     @assert solver.cache.initialized "solver not yet initialized"
-    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f))
+    θsat = get(obj.f_kwargs, :θsat, 0.5)
     H = @SVector[obj.H]
     H_dual = dual(H, typeof(obj))[1]
     θw_dual = solver.cache.f_H(H_dual)
@@ -177,7 +177,7 @@ function initialize!(solver::SFCCPreSolver{<:SFCCPreSolverCacheND{N}}, fc::SFCC,
     end
     let Tₘ = SoilFreezeThawProperties(fc).Tₘ,
         Lsl = SoilFreezeThawProperties(fc).Lsl,
-        ρw = SoilWaterVolume(fc).ρw,
+        ρw = SoilFreezeThawProperties(fc).ρw,
         L = ρw*Lsl,
         f(T, sat; kwargs...) = fc(T, sat; kwargs...);
         # residual as a function of T and H
@@ -208,7 +208,7 @@ function sfccsolve(
     ::Val{return_all}=Val{true}()
 ) where {return_all}
     @assert solver.cache.initialized "solver not yet initialized"
-    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f).θsat)
+    θsat = get(obj.f_kwargs, :θsat, 0.5)
     θtot = obj.sat*θsat
     L = obj.L
     H = @SVector[obj.H]

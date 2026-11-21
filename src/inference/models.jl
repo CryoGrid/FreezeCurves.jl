@@ -91,18 +91,23 @@ sfccpriors(m::IsoNormalT) = (
     return T
 end
 
-sfccpriors(vol::SoilWaterVolume; sat_mean=1.0, sat_dispersion=10.0, por_dispersion=10.0, res_dispersion=10.0) = (
+"""
+    swvpriors(; θsat=0.5, θres=0.0, sat_mean=1.0, sat_dispersion=10.0, por_dispersion=10.0, res_dispersion=10.0)
+
+Default priors for `swvmodel` with prior means of saturation `sat_mean`, porosity `θsat`, and residual fraction `θres / θsat`.
+"""
+swvpriors(; θsat=0.5, θres=0.0, sat_mean=1.0, sat_dispersion=10.0, por_dispersion=10.0, res_dispersion=10.0) = (
     sat = betaprior(sat_mean, sat_dispersion),
-    por = betaprior(vol.θsat, por_dispersion),
-    res = betaprior(vol.θres / vol.θsat, res_dispersion),
+    por = betaprior(θsat, por_dispersion),
+    res = betaprior(θres / θsat, res_dispersion),
 )
 """
-    swvmodel(swp::SoilWaterVolume, priors)
+    swvmodel(priors)
 
 Probabilistic model of the porous water volume. Considers saturation `sat`, porosity `por`, and the residual fraction `res`
 as random variables, returning `sat`, `θsat = por`, and `θres = res*por` as generated quantities.
 """
-@model function swvmodel(vol::SoilWaterVolume, priors)
+@model function swvmodel(priors)
     sat ~ priors.sat
     por ~ priors.por
     res ~ priors.res
@@ -125,21 +130,21 @@ sfccpriors(m::SFCCModel{<:Westermann}) = (
     Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = swvpriors(),
 )
 sfccpriors(m::SFCCModel{<:McKenzie}) = (
     logγ = Normal(0,2),
     Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = swvpriors(),
 )
 sfccpriors(m::SFCCModel{<:Hu2020}) = (
     b = Normal(0,2),
     Tₘ = truncated(Normal(0,0.1), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = swvpriors(),
 )
 @model function sfccmodel(
     model::SFCCModel{Tfc},
@@ -160,7 +165,7 @@ sfccpriors(m::SFCCModel{<:Hu2020}) = (
 	Tₘ ~ priors.Tₘ
     temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas))
     p = exp(logp)
-    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol))
+    vol ~ to_submodel(swvmodel(priors.vol))
     (; sat, θsat, θres) = vol
     T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, pname => p)
@@ -182,7 +187,7 @@ end
     b ~ priors.b
 	Tₘ ~ priors.Tₘ
     temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas))
-    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol))
+    vol ~ to_submodel(swvmodel(priors.vol))
     (; sat, θsat, θres) = vol
     T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ)
@@ -197,7 +202,7 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     Tₘ = truncated(Normal(0,0.25), -Inf, 0),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = swvpriors(),
 )
 @model function sfccmodel(
     model::SFCCModel{<:DallAmico},
@@ -215,7 +220,7 @@ sfccpriors(m::SFCCModel{<:DallAmico}) = (
     α = exp(logα)
     n = 1 + exp(logn)
     temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas), false)
-    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol), false)
+    vol ~ to_submodel(swvmodel(priors.vol), false)
     (; sat, θsat, θres) = vol
     T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, α, n)
@@ -232,7 +237,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     ω₀ = Beta(1,1),
     lik = sfccpriors(m.lik),
     meas = sfccpriors(m.meas),
-    vol = sfccpriors(SoilWaterVolume(m.sfcc)),
+    vol = swvpriors(),
 )
 @model function sfccmodel(
     model::SFCCModel{<:PainterKarra},
@@ -254,7 +259,7 @@ sfccpriors(m::SFCCModel{<:PainterKarra}) = (
     α = exp(logα)
     n = 1 + exp(logn)
     temp ~ to_submodel(temperature_measurement_model(model.meas, T_obs, priors.meas), false)
-    vol ~ to_submodel(swvmodel(SoilWaterVolume(fc), priors.vol), false)
+    vol ~ to_submodel(swvmodel(priors.vol), false)
     (; sat, θsat, θres) = vol
     T = temp
     θw = fc.(T, sat; θsat, θres, Tₘ, β, ω, α, n)

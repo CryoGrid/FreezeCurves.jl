@@ -26,15 +26,17 @@ using Unitful
         end
     end
     @testset "VanGenuchten derivative (saturated and type-stable)" begin
-        f = VanGenuchten(α=2.0f0, n=1.5f0, vol=SoilWaterVolume(ρw=1000.0f0, θres=0.05f0, θsat=0.4f0))
+        f = VanGenuchten(α=2.0f0, n=1.5f0)
+        θsat = 0.4f0
+        θres = 0.05f0
         ∂f∂ψ = FreezeCurves.derivative(f)
-        @test @inferred(∂f∂ψ(-0.5f0)) > 0.0f0
-        @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
-        @test @inferred(∂f∂ψ(1.0f0)) === 0.0f0
+        @test @inferred(∂f∂ψ(-0.5f0; θsat, θres)) > 0.0f0
+        @test @inferred(∂f∂ψ(0.0f0; θsat, θres)) === 0.0f0
+        @test @inferred(∂f∂ψ(1.0f0; θsat, θres)) === 0.0f0
         # inverse in the number type of the arguments
-        @test @inferred(Base.inv(f)(0.2f0)) isa Float32
-        @test Base.inv(f)(0.2f0) ≈ Base.inv(f)(0.2)
-        @test @inferred(Base.inv(f)(0.4f0)) === 0.0f0
+        @test @inferred(Base.inv(f)(0.2f0; θsat, θres)) isa Float32
+        @test Base.inv(f)(0.2f0; θsat, θres) ≈ Base.inv(f)(0.2; θsat=0.4, θres=0.05)
+        @test @inferred(Base.inv(f)(0.4f0; θsat, θres)) === 0.0f0
     end
     @testset "VanGenuchten (units)" begin
         f = ustrip(VanGenuchten(α=0.02u"cm^-1", n=1.4))
@@ -64,11 +66,24 @@ using Unitful
         end
     end
     @testset "BrooksCorey derivative (saturated and type-stable)" begin
-        f = BrooksCorey(ψₛ=0.1f0, λ=0.5f0, vol=SoilWaterVolume(ρw=1000.0f0, θres=0.05f0, θsat=0.4f0))
+        f = BrooksCorey(ψₛ=0.1f0, λ=0.5f0)
+        θsat = 0.4f0
+        θres = 0.05f0
         ∂f∂ψ = FreezeCurves.derivative(f)
-        @test @inferred(∂f∂ψ(-0.5f0)) > 0.0f0
-        @test @inferred(∂f∂ψ(-0.05f0)) === 0.0f0
-        @test @inferred(∂f∂ψ(0.0f0)) === 0.0f0
+        @test @inferred(∂f∂ψ(-0.5f0; θsat, θres)) > 0.0f0
+        @test @inferred(∂f∂ψ(-0.05f0; θsat, θres)) === 0.0f0
+        @test @inferred(∂f∂ψ(0.0f0; θsat, θres)) === 0.0f0
+    end
+    @testset "VanGenuchten presets" begin
+        textures = ["sand", "sandy loam", "silt loam", "sandy clay loam", "silt", "sandy clay",
+                    "silty clay", "clay", "organic"]
+        for name in textures
+            f = VanGenuchten(name)
+            (; θsat, θres) = watercontent(Val(Symbol(replace(name, " " => ""))), Val(:carselparrish))
+            @test 0 <= θres < θsat < 1
+            @test θres < f(-1.0u"m"; θsat, θres) < θsat
+            @test f(0.0u"m"; θsat, θres) == θsat
+        end
     end
     @testset "BrooksCorey presets" begin
         textures = ["sand", "loamy sand", "sandy loam", "silt loam", "loam", "sandy clay loam",
@@ -77,8 +92,12 @@ using Unitful
             f = BrooksCorey(name)
             @test f == BrooksCorey(Symbol(replace(name, " " => "")))
             @test 0 < f.λ < 1
-            @test f(-2 * f.ψₛ) < f.vol.θsat
-            @test f(-f.ψₛ / 2) == f.vol.θsat
+            texture = Val(Symbol(replace(name, " " => "")))
+            (; θsat, θres) = watercontent(texture)
+            @test watercontent(texture, Val(:clapphornberger)) == (; θsat, θres)
+            @test 0 < θsat < 1
+            @test f(-2 * f.ψₛ; θsat, θres) < θsat
+            @test f(-f.ψₛ / 2; θsat, θres) == θsat
         end
     end
 end

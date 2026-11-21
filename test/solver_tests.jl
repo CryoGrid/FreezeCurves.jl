@@ -10,8 +10,7 @@ using Base.Iterators
     L = 3.34e8
     T₀ = -1.0
     for fc in freezecurves
-        vol = SoilWaterVolume(fc)
-        θsat = vol.θsat
+        θsat = 0.5
         hc = FreezeCurves.heatcapacity(1.9e6, 4.2e6)
         θw_true = fc(-0.01; θsat)
         C_true = hc(θw_true, θsat, θsat)
@@ -29,8 +28,7 @@ end
     @testset "Newton" begin
         solver = SFCCNewtonSolver(abstol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            vol = SoilWaterVolume(fc)
-            θsat = vol.θsat
+            θsat = 0.5
             hc = FreezeCurves.heatcapacity(1.9e6, 4.2e6)
             θw_true = fc(T_true; θsat)
             C_true = hc(θw_true, θsat, θsat)
@@ -46,8 +44,7 @@ end
         # convergence issues for some freeze curves and initial guesses.
         solver = SFCCNonlinearSolver(Falsi(), abstol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            vol = SoilWaterVolume(fc)
-            θsat = vol.θsat
+            θsat = 0.5
             hc = FreezeCurves.heatcapacity(1.9e6, 4.2e6)
             θw_true = fc(T_true; θsat)
             C_true = hc(θw_true, θsat, θsat)
@@ -62,8 +59,7 @@ end
     @testset "Presolver" begin
         solver = SFCCPreSolver(SFCCPreSolverCache1D(), errtol=1e-5)
         for (T_true, fc) in product(T_cases, freezecurves)
-            vol = SoilWaterVolume(fc)
-            θsat = vol.θsat
+            θsat = 0.5
             hc = FreezeCurves.heatcapacity(1.9e6, 4.2e6)
             FreezeCurves.initialize!(solver, fc, hc; θsat)
             θw_true = fc(T_true; θsat)
@@ -76,8 +72,7 @@ end
         end
         solver = SFCCPreSolver(SFCCPreSolverCacheND())
         for (T_true, fc) in product(T_cases, freezecurves)
-            vol = SoilWaterVolume(fc)
-            θsat = vol.θsat
+            θsat = 0.5
             hc = FreezeCurves.heatcapacity(1.9e6, 4.2e6)
             FreezeCurves.initialize!(solver, fc, hc; θsat)
             sat = 0.95

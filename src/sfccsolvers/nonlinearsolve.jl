@@ -23,7 +23,7 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNonlinearSolve
     prob = NonlinearProblem{false}(f, u0)
     T = first(solve(prob, solver.nlsolver, solver.opts...))
     θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
-    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f))
+    θsat = get(obj.f_kwargs, :θsat, 0.5)
     C = obj.hc(θw, obj.sat*θsat, θsat)
     return return_all ? (; T, θw, C, ∂θw∂T) : T
 end
@@ -33,7 +33,7 @@ function sfccsolve(obj::SFCCInverseEnthalpyObjective, solver::SFCCNonlinearSolve
     prob = IntervalNonlinearProblem{false}(f, T₀)
     T = first(solve(prob, solver.nlsolver, solver.opts...))
     θw, ∂θw∂T = ∇(T -> obj.f(T; obj.f_kwargs...), T)
-    θsat = get(obj.f_kwargs, :θsat, SoilWaterVolume(obj.f))
+    θsat = get(obj.f_kwargs, :θsat, 0.5)
     C = obj.hc(θw, obj.sat*θsat, θsat)
     return return_all ? (; T, θw, C, ∂θw∂T) : T
 end

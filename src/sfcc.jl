@@ -41,13 +41,14 @@ Produces an `SFCCTable` function which is a tabulation of `f`.
 """
 Tabulated(f::SFCC, args...; kwargs...) = SFCCTable(f, tabulate(f, args...; kwargs...))
 """
-    SoilFreezeThawProperties{TTₘ,TLsl}
+    SoilFreezeThawProperties{TTₘ,TLsl,Tρw}
 
 Struct containing constants/parameters common to some or all SFCCs.
 """
-Base.@kwdef struct SoilFreezeThawProperties{TTₘ,TLsl}
+Base.@kwdef struct SoilFreezeThawProperties{TTₘ,TLsl,Tρw}
     Tₘ::TTₘ = 0.0u"°C" # melting temperature
     Lsl::TLsl = 3.34e5u"J/kg" # specific latent heat of fusion of water
+    ρw::Tρw = 1000.0u"kg/m^3" # density of water
 end
 """
     SoilFreezeThawProperties(f::SFCC)
@@ -56,24 +57,18 @@ Retrieves the default `SoilFreezeThawProperties` from `f`; should be defined for
 """
 SoilFreezeThawProperties(f::SFCC) = f.freezethaw
 """
-    SoilWaterVolume(f::SFCC)
-
-Retrieves the nested `SoilWaterVolume` from the `SoilFreezeThawProperties` of the freeze curve `f`.
-"""
-SoilWaterVolume(f::SFCC) = f.vol
-"""
     inflectionpoint(f::SFCC)
 
 Returns the analytical inflection point (i.e. where ∂²θ/∂T^2 = 0), if available.
 """
 inflectionpoint(f::SFCC) = error("not implemented for $f")
 """
-    temperature_residual(f::F, hc, L, H, T, sat; θsat=SoilWaterVolume(f).θsat, f_kwargs...) where {F<:SFCC}
+    temperature_residual(f::F, hc, L, H, T, sat; θsat=0.5, f_kwargs...) where {F<:SFCC}
     
 Helper function for updating θw, C, and the residual. `hc` should be a function `(θw,θtot,θsat) -> C`
 which computes the heat capacity from the unfrozen, total, and maximum (saturated) water contents respectively.
 """
-@inline function temperature_residual(f::F, hc, L, H, T, sat; θsat=SoilWaterVolume(f).θsat, f_kwargs...) where {F<:SFCC}
+@inline function temperature_residual(f::F, hc, L, H, T, sat; θsat=0.5, f_kwargs...) where {F<:SFCC}
     # helper function to handle case where SFCC has no SWRC and thus does not accept ψ₀ as an argument
     _invoke_f(::Nothing, T, sat) = f(T; θsat, f_kwargs...)
     _invoke_f(::SWRC, T, sat) = f(T, sat; θsat, f_kwargs...)
@@ -99,8 +94,8 @@ end
     T,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
-    θsat=f.swrc.vol.θsat,
-    θres=f.swrc.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -138,8 +133,8 @@ end
 function inflectionpoint(
     f::PainterKarra,
     sat=1.0;
-    θsat=f.swrc.vol.θsat,
-    θres=f.swrc.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     β=f.β,
     ω=f.ω,
@@ -172,8 +167,8 @@ end
     T,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
-    θsat=f.swrc.vol.θsat,
-    θres=f.swrc.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 ) where output
@@ -186,8 +181,8 @@ end
 function inflectionpoint(
     f::DallAmico,
     sat=1.0;
-    θsat=f.swrc.vol.θsat,
-    θres=f.swrc.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     swrc_kwargs...
 )
@@ -214,8 +209,8 @@ function (f::DallAmicoSalt)(
     T,
     sat=one(ustrip(T)),
     ::Val{output}=Val{:θw}();
-    θsat=f.swrc.vol.θsat,
-    θres=f.swrc.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     saltconc=f.saltconc,
     swrc_kwargs...
@@ -224,7 +219,7 @@ function (f::DallAmicoSalt)(
         ψ₀ = waterpotential(swrc(f), θtot; θsat, θres, swrc_kwargs...),
         g = f.g,
         R = f.R,
-        ρw = f.swrc.vol.ρw,
+        ρw = f.freezethaw.ρw,
         Lsl = f.freezethaw.Lsl,
         Lf = Lsl*ρw,
         Tₘ = normalize_temperature(Tₘ),
@@ -250,29 +245,27 @@ function (f::DallAmicoSalt)(
 end
 # method dispatches for SWRC-based freeze curves
 swrc(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = f.swrc
-SoilWaterVolume(f::Union{DallAmico,DallAmicoSalt,PainterKarra}) = SoilWaterVolume(swrc(f))
 
 ##################################
 ### Empirical curves (no SWRC) ###
 ##################################
 
 """
-    McKenzie{TFT,Tvol,Tγ} <: SFCC
+    McKenzie{TFT,Tγ} <: SFCC
 
 McKenzie JM, Voss CI, Siegel DI, 2007. Groundwater flow with energy transport and water-ice phase change:
     numerical simulations, benchmarks, and application to freezing in peat bogs. Advances in Water Resources,
     30(4): 966–983. DOI: 10.1016/j.advwatres.2006.08.008.
 """
-Base.@kwdef struct McKenzie{TFT,Tvol,Tγ} <: SFCC
+Base.@kwdef struct McKenzie{TFT,Tγ} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
-    vol::Tvol = SoilWaterVolume()
     γ::Tγ = 0.1u"K" # domain (0,Inf)
 end
 function (f::McKenzie)(
     T,
     sat=one(ustrip(T));
-    θsat=f.vol.θsat,
-    θres=f.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     γ=f.γ,
 )
@@ -284,22 +277,21 @@ function (f::McKenzie)(
 end
 
 """
-    Westermann{TFT,Tvol,Tδ} <: SFCC
+    Westermann{TFT,Tδ} <: SFCC
 
 Westermann, S., Boike, J., Langer, M., Schuler, T. V., and Etzelmüller, B.: Modeling the impact of
     wintertime rain events on the thermal regime of permafrost, The Cryosphere, 5, 945–959,
     https://doi.org/10.5194/tc-5-945-2011, 2011. 
 """
-Base.@kwdef struct Westermann{TFT,Tvol,Tδ} <: SFCC
+Base.@kwdef struct Westermann{TFT,Tδ} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
-    vol::Tvol = SoilWaterVolume()
     δ::Tδ = 0.1u"K" # domain: (0,Inf)
 end
 function (f::Westermann)(
     T,
     sat=one(ustrip(T));
-    θsat=f.vol.θsat,
-    θres=f.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     δ=f.δ,
 )
@@ -311,23 +303,22 @@ function (f::Westermann)(
 end
 
 """
-    Langer{TFT,Tvol,Ta,Tb} <: SFCC
+    Langer{TFT,Ta,Tb} <: SFCC
     
 Langer, M., Westermann, S., Muster, S., Piel, K., & Boike, J. (2011). The surface energy balance of
     a polygonal tundra site in northern Siberia – Part 2: Winter. The Cryosphere, 5(2), 509–524.
     https://doi.org/10.5194/tc-5-509-2011
 """
-Base.@kwdef struct Langer{TFT,Tvol,Ta,Tb} <: SFCC
+Base.@kwdef struct Langer{TFT,Ta,Tb} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
-    vol::Tvol = SoilWaterVolume()
     a::Ta = 19.0
     b::Tb = 4.0
 end
 function (f::Langer)(
     T,
     sat=one(ustrip(T));
-    θsat=f.vol.θsat,
-    θres=f.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     a=f.a,
     b=f.b,
@@ -341,22 +332,21 @@ function (f::Langer)(
 end
 
 """
-    Hu2020{TFT,Tvol,Tb}  <: SFCC
+    Hu2020{TFT,Tb}  <: SFCC
 
 Soil freezing characteristic curve formulation of Hu et al. 2020.
 
 Hu G, Zhao L, Zhu X, Wu X, Wu T, Li R, Xie C, Hao J. Review of algorithms and parameterizations to determine unfrozen water content in frozen soil. Geoderma. 2020 Jun 1;368:114277.
 """
-Base.@kwdef struct Hu2020{TFT,Tvol,Tb} <: SFCC
+Base.@kwdef struct Hu2020{TFT,Tb} <: SFCC
     freezethaw::TFT = SoilFreezeThawProperties()
-    vol::Tvol = SoilWaterVolume()
     b::Tb = 0.01
 end
 function (f::Hu2020)(
     T,
     sat=one(ustrip(T));
-    θsat=f.vol.θsat,
-    θres=f.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     Tₘ=f.freezethaw.Tₘ,
     b=f.b,
 )
@@ -370,22 +360,21 @@ function (f::Hu2020)(
 end
 
 """
-    PowerLaw{Tvol,Tα,Tβ} <: SFCC
+    PowerLaw{Tα,Tβ} <: SFCC
 
 Commonly used power law relation of Lovell (1957).
 
 Lovell, C.: Temperature effects on phase composition and strength of partially frozen soil, Highway Research Board Bulletin, 168, 74–95, 1957.
 """
-Base.@kwdef struct PowerLaw{Tvol,Tα,Tβ} <: SFCC
-    vol::Tvol = SoilWaterVolume()
+Base.@kwdef struct PowerLaw{Tα,Tβ} <: SFCC
     α::Tα = 0.01
     β::Tβ = 0.5
 end
 function (f::PowerLaw)(
     T,
     sat=one(ustrip(T));
-    θsat=f.vol.θsat,
-    θres=f.vol.θres,
+    θsat=0.5,
+    θres=0.0,
     α=f.α,
     β=f.β,
 )

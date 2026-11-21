@@ -64,7 +64,7 @@ mkfc2(-1.0u"°C")
 ```
 which results in a much longer curve with more than 18% unfrozen water content by volume at -1.0 °C!
 
-All freeze curves also accept their parameters (excluding some constants) as function arguments, with default values set to those found in the struct. For example, the full method signature for `McKenzie` is:
+All freeze curves also accept their parameters (excluding some constants) as function arguments, with default values set to those found in the struct. The exceptions are the saturated and residual water contents, `θsat` and `θres`, which are not stored in the struct and default to `0.5` and `0.0` respectively. For example, the full method signature for `McKenzie` is:
 
 `(f::McKenzie)(T; θtot, θsat, θres, Tₘ, γ)`
 
@@ -76,19 +76,32 @@ mkfc(-1.0u"°C", γ=1.0u"K")
 0.18393972058572117
 ```
 
-In cases where it is more convenient/appropriate to modify the default parameter values in the struct itself, it's worth noting that some parameters are nested one or two levels deep, e.g. setting the saturated water content (porosity) for a `DallAmico` freeze curve would look like:
+Setting a different saturated water content (porosity), e.g. for a `DallAmico` freeze curve, therefore looks like:
 
 ```julia
-dafc = DallAmico(swrc=VanGenuchten(water=SoilWaterVolume(θsat=0.75)))
+dafc = DallAmico()
+dafc(-0.1u"°C"; θsat=0.75)
+```
+Saturated and residual water contents for common soil textures are provided by `watercontent`, which defaults to the values of Clapp and Hornberger (1978) used by the `BrooksCorey` presets; the values of Carsel and Parrish (1988) used by the `VanGenuchten` presets are available via `Val(:carselparrish)`:
+
+```julia
+BrooksCorey(:sand)(-1.0u"m"; watercontent(Val(:sand))...)
+VanGenuchten(:sand)(-1.0u"m"; watercontent(Val(:sand), Val(:carselparrish))...)
+```
+
+In cases where it is more convenient/appropriate to modify the default parameter values in the struct itself, it's worth noting that some parameters are nested one or two levels deep, e.g. setting the van Genuchten shape parameter `n` for a `DallAmico` freeze curve would look like:
+
+```julia
+dafc = DallAmico(swrc=VanGenuchten(n=1.5))
 ```
 This is admittedly somewhat unwieldy, so `FreezeCurves` re-exports `@set!` from [Setfield.jl](https://github.com/jw3126/Setfield.jl) to make this a bit easier:
 
 ```julia
 dafc = DallAmico()
-@set! dafc.swrc.vol.θsat = 0.75
-dafc.swrc.vol.θsat
+@set! dafc.swrc.n = 1.5
+dafc.swrc.n
 # output
-0.75
+1.5
 ```
 
 Note also that FreezeCurves.jl **strictly uses unitful quantities** (from [Unitful.jl](https://github.com/PainterQubits/Unitful.jl)) to ensure physical coherence and avoid confusion between temperature units. The macro `u"°C"` applies units of degrees Celsius to the floating point number `-0.1` (the degree symbol can be typed in the Julia REPL or editor using `\degree` followed the `TAB` key). Speical method dispatches for `ustrip` are provided for freeze and water retention curve function types that will automatically strip the units from all fields nested within the function struct. **When used without units, all temperatures are assumed to be in degrees Celsius (°C)!**
